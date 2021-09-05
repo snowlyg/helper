@@ -23,7 +23,8 @@ func GetCurrentAbPath() string {
 	dir := GetCurrentAbPathByExecutable()
 	tmpDir, _ := filepath.EvalSymlinks(os.TempDir())
 	if strings.Contains(dir, tmpDir) {
-		return GetCurrentAbPathByCaller()
+		wd, _ := os.Getwd()
+		return wd
 	}
 	if strings.Contains(dir, "/tmp") {
 		return filepath.Dir(dir)
@@ -40,16 +41,6 @@ func GetCurrentAbPathByExecutable() string {
 	}
 	res, _ := filepath.EvalSymlinks(filepath.Dir(exePath))
 	return res
-}
-
-// GetCurrentAbPathByCaller 当前方法执行目录
-func GetCurrentAbPathByCaller() string {
-	var abPath string
-	_, filename, _, ok := runtime.Caller(0)
-	if ok {
-		abPath = path.Dir(filename)
-	}
-	return abPath
 }
 
 // GetCurrentFuncNameByCaller 当前方法执行函数名
