@@ -1,22 +1,20 @@
 package tests
 
-import "net/http"
-
 var (
 	RequestParams = map[string]interface{}{"page": 1, "pageSize": 10}
 	LoginParams   = map[string]interface{}{"username": "admin", "password": "123456"}
 	LoginResponse = Responses{
-		{Key: "status", Value: http.StatusOK},
-		{Key: "message", Value: "登录成功"},
+		{Key: "code", Value: 2000},
+		{Key: "message", Value: "请求成功"},
 		{Key: "data",
 			Value: Responses{
-				{Key: "AccessToken", Value: "登录成功", Type: "noempty"},
+				{Key: "accessToken", Value: "", Type: "notempty"},
 			},
 		},
 	}
 	LogoutResponse = Responses{
-		{Key: "status", Value: http.StatusOK},
-		{Key: "message", Value: "退出成功"},
+		{Key: "code", Value: 2000},
+		{Key: "message", Value: "请求成功"},
 	}
 	ResponseDatas = Responses{
 		{Key: "pageSize", Value: 10},

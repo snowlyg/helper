@@ -2,12 +2,10 @@ package tests
 
 import (
 	"reflect"
-	"sync"
+	"strings"
 
 	"github.com/gavv/httpexpect/v2"
 )
-
-var wg sync.WaitGroup
 
 // type Param struct {
 // 	Name string
@@ -39,14 +37,12 @@ func IdKeys() Responses {
 
 func (res Responses) Test(object *httpexpect.Object) Responses {
 	for _, rs := range res {
-		wg.Add(1)
 		if rs.Value == nil {
-			wg.Done()
 			continue
 		}
 		switch reflect.TypeOf(rs.Value).String() {
 		case "string":
-			if rs.Value.(string) == "notempty" {
+			if rs.Type == "notempty" {
 				object.Value(rs.Key).String().NotEmpty()
 			} else {
 				object.Value(rs.Key).String().Equal(rs.Value.(string))
@@ -57,7 +53,7 @@ func (res Responses) Test(object *httpexpect.Object) Responses {
 			object.Value(rs.Key).Number().Equal(rs.Value.(uint))
 		case "int":
 			object.Value(rs.Key).Number().Equal(rs.Value.(int))
-		case "[]base.ResponseKeys":
+		case "[]tests.Responses":
 			object.Value(rs.Key).Array().Length().Equal(len(rs.Value.([]Responses)))
 			length := int(object.Value(rs.Key).Array().Length().Raw())
 			if length > 0 && len(rs.Value.([]Responses)) == length {
@@ -65,6 +61,8 @@ func (res Responses) Test(object *httpexpect.Object) Responses {
 					rs.Value.([]Responses)[i].Test(object.Value(rs.Key).Array().Element(i).Object())
 				}
 			}
+		case "tests.Responses":
+			rs.Value.(Responses).Test(object.Value(rs.Key).Object())
 		case "[]uint":
 			object.Value(rs.Key).Array().Length().Equal(len(rs.Value.([]uint)))
 			length := int(object.Value(rs.Key).Array().Length().Raw())
@@ -83,20 +81,15 @@ func (res Responses) Test(object *httpexpect.Object) Responses {
 			}
 
 		default:
-			wg.Done()
 			continue
 		}
-		wg.Done()
 	}
-	wg.Wait()
 	return res.Scan(object)
 }
 
 func (res Responses) Scan(object *httpexpect.Object) Responses {
 	for k, rk := range res {
-		wg.Add(1)
 		if !Exist(object, rk.Key) {
-			wg.Done()
 			continue
 		}
 		switch reflect.TypeOf(rk.Value).String() {
@@ -110,7 +103,7 @@ func (res Responses) Scan(object *httpexpect.Object) Responses {
 			res[k].Value = int32(object.Value(rk.Key).Number().Raw())
 		case "float64":
 			res[k].Value = object.Value(rk.Key).Number().Raw()
-		case "[]base.ResponseKeys":
+		case "[]tests.Responses":
 			object.Value(rk.Key).Array().Length().Equal(len(rk.Value.([]Responses)))
 			length := int(object.Value(rk.Key).Array().Length().Raw())
 			if length > 0 && len(rk.Value.([]Responses)) == length {
@@ -118,11 +111,11 @@ func (res Responses) Scan(object *httpexpect.Object) Responses {
 					rk.Value.([]Responses)[i].Scan(object.Value(rk.Key).Array().Element(i).Object())
 				}
 			}
+		case "tests.Responses":
+			res[k].Value = rk.Value.(Responses).Scan(object.Value(rk.Key).Object())
 		case "[]string":
 			length := int(object.Value(rk.Key).Array().Length().Raw())
-
 			if length == 0 {
-				wg.Done()
 				continue
 			}
 			reskey, ok := res[k].Value.([]string)
@@ -134,12 +127,9 @@ func (res Responses) Scan(object *httpexpect.Object) Responses {
 				res[k].Value = strings
 			}
 		default:
-			wg.Done()
 			continue
 		}
-		wg.Done()
 	}
-	wg.Wait()
 	return res
 }
 
@@ -153,8 +143,16 @@ func Exist(object *httpexpect.Object, key string) bool {
 	return false
 }
 
-func (rks Responses) GetString(key string) string {
-	for _, rk := range rks {
+func (res Responses) GetString(key string) string {
+	var keys []string
+	if strings.Contains(key, ".") {
+		keys = strings.Split(key, ".")
+		if len(keys) != 2 {
+			return ""
+		}
+		key = keys[0]
+	}
+	for _, rk := range res {
 		if key == rk.Key {
 			if rk.Value == nil {
 				return ""
@@ -162,6 +160,8 @@ func (rks Responses) GetString(key string) string {
 			switch reflect.TypeOf(rk.Value).String() {
 			case "string":
 				return rk.Value.(string)
+			case "tests.Responses":
+				return rk.Value.(Responses).GetString(keys[1])
 			}
 		}
 	}
@@ -190,7 +190,7 @@ func (rks Responses) GetResponses(key string) []Responses {
 				return nil
 			}
 			switch reflect.TypeOf(rk.Value).String() {
-			case "[]base.ResponseKeys":
+			case "[]tests.Responses":
 				return rk.Value.([]Responses)
 			}
 		}
