@@ -31,26 +31,44 @@ func New(url string, t *testing.T, handler http.Handler) *Client {
 	}
 }
 
-func (c *Client) Login(url string, res Responses, datas ...map[string]interface{}) {
+func (c *Client) Login(url string, res Responses, datas ...map[string]interface{}) error {
 	data := LoginParams
 	if len(datas) > 0 {
 		data = datas[0]
 	}
-	obj := c.expect.POST(url).WithJSON(data).Expect().Status(http.StatusOK).JSON().Object()
 	if res == nil {
 		res = LoginResponse
 	}
-	token := res.Test(obj).GetString("data.accessToken")
+	token := c.POST(url, res, data).GetString("data.accessToken")
 	fmt.Printf("access_token is '%s'\n", token)
+	if token == "" {
+		return fmt.Errorf("access_token is empty")
+	}
 	c.expect = c.expect.Builder(func(req *httpexpect.Request) {
 		req.WithHeader("Authorization", str.Join("Bearer ", token))
 	})
+	return nil
 }
 
 func (c *Client) Logout(url string, res Responses) {
 	if res == nil {
 		res = LogoutResponse
 	}
-	obj := c.expect.GET(url).Expect().Status(http.StatusOK).JSON().Object()
-	res.Test(obj)
+	c.GET(url, res)
+}
+
+// POST
+func (c *Client) POST(url string, res Responses, data map[string]interface{}) Responses {
+	obj := c.expect.POST(url).WithJSON(data).Expect().Status(http.StatusOK).JSON().Object()
+	return res.Test(obj)
+}
+
+// GET
+func (c *Client) GET(url string, res Responses, datas ...map[string]interface{}) Responses {
+	req := c.expect.GET(url)
+	if len(datas) > 0 {
+		req = req.WithQueryObject(datas[0])
+	}
+	obj := req.Expect().Status(http.StatusOK).JSON().Object()
+	return res.Test(obj)
 }

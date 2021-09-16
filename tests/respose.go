@@ -42,17 +42,29 @@ func (res Responses) Test(object *httpexpect.Object) Responses {
 		}
 		switch reflect.TypeOf(rs.Value).String() {
 		case "string":
-			if rs.Type == "notempty" {
+			if strings.ToLower(rs.Type) == "notempty" {
 				object.Value(rs.Key).String().NotEmpty()
 			} else {
 				object.Value(rs.Key).String().Equal(rs.Value.(string))
 			}
 		case "float64":
-			object.Value(rs.Key).Number().Equal(rs.Value.(float64))
+			if strings.ToLower(rs.Type) == "ge" {
+				object.Value(rs.Key).Number().Ge(rs.Value.(float64))
+			} else {
+				object.Value(rs.Key).Number().Equal(rs.Value.(float64))
+			}
 		case "uint":
-			object.Value(rs.Key).Number().Equal(rs.Value.(uint))
+			if strings.ToLower(rs.Type) == "ge" {
+				object.Value(rs.Key).Number().Ge(rs.Value.(uint))
+			} else {
+				object.Value(rs.Key).Number().Equal(rs.Value.(uint))
+			}
 		case "int":
-			object.Value(rs.Key).Number().Equal(rs.Value.(int))
+			if strings.ToLower(rs.Type) == "ge" {
+				object.Value(rs.Key).Number().Ge(rs.Value.(int))
+			} else {
+				object.Value(rs.Key).Number().Equal(rs.Value.(int))
+			}
 		case "[]tests.Responses":
 			object.Value(rs.Key).Array().Length().Equal(len(rs.Value.([]Responses)))
 			length := int(object.Value(rs.Key).Array().Length().Raw())
