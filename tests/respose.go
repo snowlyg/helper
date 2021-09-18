@@ -84,14 +84,19 @@ func (res Responses) Test(object *httpexpect.Object) Responses {
 				}
 			}
 		case "[]string":
-			object.Value(rs.Key).Array().Length().Equal(len(rs.Value.([]string)))
-			length := int(object.Value(rs.Key).Array().Length().Raw())
-			if length > 0 && len(rs.Value.([]string)) == length {
-				for i := 0; i < length; i++ {
-					object.Value(rs.Key).Array().Element(i).String().Equal(rs.Value.([]string)[i])
+			if strings.ToLower(rs.Type) == "null" {
+				object.Value(rs.Key).Null()
+			} else if strings.ToLower(rs.Type) == "notnull" {
+				object.Value(rs.Key).NotNull()
+			} else {
+				object.Value(rs.Key).Array().Length().Equal(len(rs.Value.([]string)))
+				length := int(object.Value(rs.Key).Array().Length().Raw())
+				if length > 0 && len(rs.Value.([]string)) == length {
+					for i := 0; i < length; i++ {
+						object.Value(rs.Key).Array().Element(i).String().Equal(rs.Value.([]string)[i])
+					}
 				}
 			}
-
 		default:
 			continue
 		}
@@ -126,17 +131,23 @@ func (res Responses) Scan(object *httpexpect.Object) Responses {
 		case "tests.Responses":
 			res[k].Value = rk.Value.(Responses).Scan(object.Value(rk.Key).Object())
 		case "[]string":
-			length := int(object.Value(rk.Key).Array().Length().Raw())
-			if length == 0 {
+			if strings.ToLower(rk.Type) == "null" {
+				res[k].Value = []string{}
+			} else if strings.ToLower(rk.Type) == "notnull" {
 				continue
-			}
-			reskey, ok := res[k].Value.([]string)
-			if ok {
-				var strings []string
-				for i := 0; i < length; i++ {
-					strings = append(reskey, object.Value(rk.Key).Array().Element(i).String().Raw())
+			} else {
+				length := int(object.Value(rk.Key).Array().Length().Raw())
+				if length == 0 {
+					continue
 				}
-				res[k].Value = strings
+				reskey, ok := res[k].Value.([]string)
+				if ok {
+					var strings []string
+					for i := 0; i < length; i++ {
+						strings = append(reskey, object.Value(rk.Key).Array().Element(i).String().Raw())
+					}
+					res[k].Value = strings
+				}
 			}
 		default:
 			continue
@@ -210,7 +221,30 @@ func (rks Responses) GetResponses(key string) []Responses {
 	return nil
 }
 
+func (rks Responses) GetResponse(key string) Responses {
+	for _, rk := range rks {
+		if key == rk.Key {
+			if rk.Value == nil {
+				return nil
+			}
+			switch reflect.TypeOf(rk.Value).String() {
+			case "tests.Responses":
+				return rk.Value.(Responses)
+			}
+		}
+	}
+	return nil
+}
+
 func (rks Responses) GetUint(key string) uint {
+	var keys []string
+	if strings.Contains(key, ".") {
+		keys = strings.Split(key, ".")
+		if len(keys) != 2 {
+			return 0
+		}
+		key = keys[0]
+	}
 	for _, rk := range rks {
 		if key == rk.Key {
 			if rk.Value == nil {
@@ -225,6 +259,8 @@ func (rks Responses) GetUint(key string) uint {
 				return rk.Value.(uint)
 			case "int":
 				return uint(rk.Value.(int))
+			case "tests.Responses":
+				return rk.Value.(Responses).GetUint(keys[1])
 			}
 		}
 	}
@@ -232,6 +268,14 @@ func (rks Responses) GetUint(key string) uint {
 }
 
 func (rks Responses) GetInt(key string) int {
+	var keys []string
+	if strings.Contains(key, ".") {
+		keys = strings.Split(key, ".")
+		if len(keys) != 2 {
+			return 0
+		}
+		key = keys[0]
+	}
 	for _, rk := range rks {
 		if key == rk.Key {
 			if rk.Value == nil {
@@ -246,12 +290,22 @@ func (rks Responses) GetInt(key string) int {
 				return int(rk.Value.(int32))
 			case "uint":
 				return int(rk.Value.(uint))
+			case "tests.Responses":
+				return rk.Value.(Responses).GetInt(keys[1])
 			}
 		}
 	}
 	return 0
 }
 func (rks Responses) GetInt32(key string) int32 {
+	var keys []string
+	if strings.Contains(key, ".") {
+		keys = strings.Split(key, ".")
+		if len(keys) != 2 {
+			return 0
+		}
+		key = keys[0]
+	}
 	for _, rk := range rks {
 		if key == rk.Key {
 			if rk.Value == nil {
@@ -266,6 +320,8 @@ func (rks Responses) GetInt32(key string) int32 {
 				return int32(rk.Value.(int))
 			case "uint":
 				return int32(rk.Value.(uint))
+			case "tests.Responses":
+				return rk.Value.(Responses).GetInt32(keys[1])
 			}
 		}
 	}
@@ -273,5 +329,5 @@ func (rks Responses) GetInt32(key string) int32 {
 }
 
 func (res Responses) GetId() uint {
-	return res.GetUint("id")
+	return res.GetUint("data.id")
 }

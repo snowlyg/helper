@@ -72,3 +72,12 @@ func (c *Client) GET(url string, res Responses, datas ...map[string]interface{})
 	obj := req.Expect().Status(http.StatusOK).JSON().Object()
 	return res.Test(obj)
 }
+// DELETE
+func (c *Client) DELETE(url string, res Responses, datas ...map[string]interface{}) Responses {
+	req := c.expect.DELETE(url)
+	if len(datas) > 0 {
+		req = req.WithQueryObject(datas[0])
+	}
+	obj := req.Expect().Status(http.StatusOK).JSON().Object()
+	return res.Test(obj)
+}
