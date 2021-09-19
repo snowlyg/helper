@@ -63,6 +63,28 @@ func (c *Client) POST(url string, res Responses, data map[string]interface{}) Re
 	return res.Test(obj)
 }
 
+// UPLOAD 上传文件
+func (c *Client) UPLOAD(url string, res Responses, files map[string]string, fields ...map[string]interface{}) Responses {
+	req := c.expect.POST(url)
+	if len(files) > 0 {
+		for field, path := range files {
+			req = req.WithMultipart().WithFile(field, path)
+		}
+	}
+	if len(fields) > 0 {
+		for _, field := range fields {
+			if len(field) == 0 {
+				continue
+			}
+			for key, value := range field {
+				req = req.WithFormField(key, value)
+			}
+		}
+	}
+	obj := req.Expect().Status(http.StatusOK).JSON().Object()
+	return res.Test(obj)
+}
+
 // GET
 func (c *Client) GET(url string, res Responses, datas ...map[string]interface{}) Responses {
 	req := c.expect.GET(url)
@@ -72,6 +94,7 @@ func (c *Client) GET(url string, res Responses, datas ...map[string]interface{})
 	obj := req.Expect().Status(http.StatusOK).JSON().Object()
 	return res.Test(obj)
 }
+
 // DELETE
 func (c *Client) DELETE(url string, res Responses, datas ...map[string]interface{}) Responses {
 	req := c.expect.DELETE(url)
