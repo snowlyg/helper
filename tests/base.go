@@ -10,11 +10,13 @@ import (
 )
 
 type Client struct {
+	t      *testing.T
 	expect *httpexpect.Expect
 }
 
 func New(url string, t *testing.T, handler http.Handler) *Client {
 	return &Client{
+		t: t,
 		expect: httpexpect.WithConfig(httpexpect.Config{
 			BaseURL: url,
 			Client: &http.Client{

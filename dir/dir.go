@@ -106,6 +106,13 @@ func IsFile(fp string) bool {
 	return !f.IsDir()
 }
 
+func Remove(filename string) error {
+	if IsFile(filename) && IsExist(filename) {
+		return os.Remove(filename)
+	}
+	return nil
+}
+
 func ReadBytes(cpath string) ([]byte, error) {
 	if !IsExist(cpath) {
 		return nil, fmt.Errorf("%s not exists", cpath)
