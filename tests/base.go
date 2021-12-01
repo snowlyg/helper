@@ -33,8 +33,9 @@ func New(url string, t *testing.T, handler http.Handler) *Client {
 	}
 }
 
-func (c *Client) Login(url string, res Responses, datas ...map[string]interface{}) error {
-	data := LoginParams
+func (c *Client) Login(url string, res Responses, datas ...interface{}) error {
+	var data interface{}
+	data = LoginParams
 	if len(datas) > 0 {
 		data = datas[0]
 	}
@@ -60,7 +61,7 @@ func (c *Client) Logout(url string, res Responses) {
 }
 
 // POST
-func (c *Client) POST(url string, res Responses, data map[string]interface{}) Responses {
+func (c *Client) POST(url string, res Responses, data interface{}) Responses {
 	obj := c.expect.POST(url).WithJSON(data).Expect().Status(http.StatusOK).JSON().Object()
 	return res.Test(obj)
 }
@@ -88,7 +89,7 @@ func (c *Client) UPLOAD(url string, res Responses, files map[string]string, fiel
 }
 
 // GET
-func (c *Client) GET(url string, res Responses, datas ...map[string]interface{}) Responses {
+func (c *Client) GET(url string, res Responses, datas ...interface{}) Responses {
 	req := c.expect.GET(url)
 	if len(datas) > 0 {
 		req = req.WithQueryObject(datas[0])
@@ -98,7 +99,7 @@ func (c *Client) GET(url string, res Responses, datas ...map[string]interface{})
 }
 
 // DELETE
-func (c *Client) DELETE(url string, res Responses, datas ...map[string]interface{}) Responses {
+func (c *Client) DELETE(url string, res Responses, datas ...interface{}) Responses {
 	req := c.expect.DELETE(url)
 	if len(datas) > 0 {
 		req = req.WithQueryObject(datas[0])
