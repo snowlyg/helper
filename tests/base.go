@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
@@ -60,6 +61,12 @@ func (c *Client) Logout(url string, res Responses) {
 	c.GET(url, res)
 }
 
+type File struct {
+	Key    string
+	Path   string
+	Reader io.Reader
+}
+
 // POST
 func (c *Client) POST(url string, res Responses, data interface{}) Responses {
 	obj := c.expect.POST(url).WithJSON(data).Expect().Status(http.StatusOK).JSON().Object()
@@ -67,11 +74,11 @@ func (c *Client) POST(url string, res Responses, data interface{}) Responses {
 }
 
 // UPLOAD 上传文件
-func (c *Client) UPLOAD(url string, res Responses, files map[string]string, fields ...map[string]interface{}) Responses {
+func (c *Client) UPLOAD(url string, res Responses, files []File, fields ...map[string]interface{}) Responses {
 	req := c.expect.POST(url)
 	if len(files) > 0 {
-		for field, path := range files {
-			req = req.WithMultipart().WithFile(field, path)
+		for _, f := range files {
+			req = req.WithMultipart().WithFile(f.Key, f.Path, f.Reader)
 		}
 	}
 	if len(fields) > 0 {
