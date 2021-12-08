@@ -229,3 +229,58 @@ func AppendFile(filePath string, b []byte) error {
 
 	return nil
 }
+
+// list dirs under dirPath
+func DirsUnder(dirPath string) ([]string, error) {
+	if !IsExist(dirPath) {
+		return []string{}, nil
+	}
+
+	fs, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return []string{}, err
+	}
+
+	sz := len(fs)
+	if sz == 0 {
+		return []string{}, nil
+	}
+
+	ret := make([]string, 0, sz)
+	for i := 0; i < sz; i++ {
+		if fs[i].IsDir() {
+			name := fs[i].Name()
+			if name != "." && name != ".." {
+				ret = append(ret, name)
+			}
+		}
+	}
+
+	return ret, nil
+}
+
+// list files under dirPath
+func FilesUnder(dirPath string) ([]string, error) {
+	if !IsExist(dirPath) {
+		return []string{}, nil
+	}
+
+	fs, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return []string{}, err
+	}
+
+	sz := len(fs)
+	if sz == 0 {
+		return []string{}, nil
+	}
+
+	ret := make([]string, 0, sz)
+	for i := 0; i < sz; i++ {
+		if !fs[i].IsDir() {
+			ret = append(ret, fs[i].Name())
+		}
+	}
+
+	return ret, nil
+}
