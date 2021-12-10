@@ -109,6 +109,9 @@ func (res Responses) Scan(object *httpexpect.Object) Responses {
 		if !Exist(object, rk.Key) {
 			continue
 		}
+		if rk.Value == nil {
+			continue
+		}
 		switch reflect.TypeOf(rk.Value).String() {
 		case "string":
 			res[k].Value = object.Value(rk.Key).String().Raw()
