@@ -73,6 +73,12 @@ func (c *Client) POST(url string, res Responses, data interface{}) Responses {
 	return res.Test(obj)
 }
 
+// PUT
+func (c *Client) PUT(url string, res Responses, data interface{}) Responses {
+	obj := c.expect.PUT(url).WithJSON(data).Expect().Status(http.StatusOK).JSON().Object()
+	return res.Test(obj)
+}
+
 // UPLOAD 上传文件
 func (c *Client) UPLOAD(url string, res Responses, files []File, fields ...map[string]interface{}) Responses {
 	req := c.expect.POST(url)
