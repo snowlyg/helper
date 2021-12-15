@@ -2,16 +2,11 @@ package tests
 
 import (
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/gavv/httpexpect/v2"
 )
-
-// type Param struct {
-// 	Name string
-// 	Args map[string]interface{}
-// 	Responses
-// }
 
 type Responses []Response
 type Response struct {
@@ -37,10 +32,11 @@ func IdKeys() Responses {
 
 func (res Responses) Test(object *httpexpect.Object) Responses {
 	for _, rs := range res {
+		reflectTypeString := reflect.TypeOf(rs.Value).String()
 		if rs.Value == nil {
 			continue
 		}
-		switch reflect.TypeOf(rs.Value).String() {
+		switch reflectTypeString {
 		case "string":
 			if strings.ToLower(rs.Type) == "notempty" {
 				object.Value(rs.Key).String().NotEmpty()
@@ -73,6 +69,14 @@ func (res Responses) Test(object *httpexpect.Object) Responses {
 					rs.Value.([]Responses)[i].Test(object.Value(rs.Key).Array().Element(i).Object())
 				}
 			}
+		case "map[int][]tests.Responses":
+			values := rs.Value.(map[int][]Responses)
+			object.Value(rs.Key).Object().Keys().Length().Equal(len(values))
+			for key, v := range values {
+				for _, vres := range v {
+					vres.Test(object.Value(rs.Key).Object().Value(strconv.FormatInt(int64(key), 10)).Object())
+				}
+			}
 		case "tests.Responses":
 			rs.Value.(Responses).Test(object.Value(rs.Key).Object())
 		case "[]uint":
@@ -95,6 +99,18 @@ func (res Responses) Test(object *httpexpect.Object) Responses {
 					for i := 0; i < length; i++ {
 						object.Value(rs.Key).Array().Element(i).String().Equal(rs.Value.([]string)[i])
 					}
+				}
+			}
+		case "map[int]string":
+			if strings.ToLower(rs.Type) == "null" {
+				object.Value(rs.Key).Null()
+			} else if strings.ToLower(rs.Type) == "notnull" {
+				object.Value(rs.Key).NotNull()
+			} else {
+				values := rs.Value.(map[int]string)
+				object.Value(rs.Key).Object().Keys().Length().Equal(len(values))
+				for key, v := range values {
+					object.Value(rs.Key).Object().Value(strconv.FormatInt(int64(key), 10)).Equal(v)
 				}
 			}
 		default:
