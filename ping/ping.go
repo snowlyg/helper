@@ -22,7 +22,10 @@ func GetPingMsg(devIp string) (bool, string) {
 	pinger.Interval = time.Duration(500 * time.Millisecond)
 	pinger.Timeout = time.Duration(1500 * time.Millisecond)
 	pinger.SetPrivileged(true)
-	pinger.Run()
+	err = pinger.Run()
+	if err != nil {
+		return false, err.Error()
+	}
 	stats := pinger.Statistics()
 	if stats.PacketsRecv >= 1 {
 		return true, fmt.Sprintf("设备ip(%s)可以访问", devIp)
