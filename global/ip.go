@@ -1,6 +1,10 @@
 package global
 
-import "net"
+import (
+	"fmt"
+	"net"
+	"time"
+)
 
 func LocalIP() string {
 	ip := ""
@@ -12,4 +16,14 @@ func LocalIP() string {
 		}
 	}
 	return ip
+}
+
+func IsPortInUse(host string, port int64) bool {
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, fmt.Sprintf("%d", port)), time.Millisecond*500)
+	if err == nil {
+		_ = conn.Close()
+		return true
+	}
+
+	return false
 }
