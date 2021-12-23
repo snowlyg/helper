@@ -21,8 +21,9 @@ func LocalIP() string {
 func IsPortInUse(host string, port int64) bool {
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, fmt.Sprintf("%d", port)), time.Second*1)
 	if err == nil {
+		conn.Close()
 		return true
 	}
-	defer conn.Close()
+
 	return false
 }
