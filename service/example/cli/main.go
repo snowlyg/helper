@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/snowlyg/helper/service"
 	"github.com/snowlyg/helper/service/control"
 )
 
@@ -57,7 +56,7 @@ func main() {
 		}
 		println("remove success")
 	case "status":
-		println(service.ServiceStatus(srvName))
+		println(control.Status(srvName))
 	default:
 		println("invaild command")
 	}
