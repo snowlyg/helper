@@ -23,6 +23,12 @@ type Config struct {
 }
 
 func NewClient(config *Config) *client {
+	if config.TimeOut == 0 {
+		config.TimeOut = 30
+	}
+	if config.TimeOver == 0 {
+		config.TimeOver = 5
+	}
 	return &client{Config: config}
 }
 
