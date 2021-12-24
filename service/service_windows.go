@@ -8,10 +8,14 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
+	"time"
 
+	"golang.org/x/sys/windows/registry"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
+	"golang.org/x/sys/windows/svc/mgr"
 )
 
 var elog debug.Log
