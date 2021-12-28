@@ -40,7 +40,7 @@ func (s *systemd) Run(isDebug bool) error {
 		return err
 	}
 
-	go func() {
+	func() {
 		var sigChan = make(chan os.Signal, 3)
 		signal.Notify(sigChan, syscall.SIGTERM, os.Interrupt)
 		<-sigChan
