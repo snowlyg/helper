@@ -1,6 +1,7 @@
 package control
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/snowlyg/helper/service"
@@ -41,7 +42,22 @@ func Stop(srvName string) error {
 		return nil
 	}
 
-	return service.ServiceStop(srvName)
+	restop := 3
+	for restop > 0 {
+		err := service.ServiceStop(srvName)
+		if err != nil {
+			fmt.Println(err)
+		}
+		status, _ = service.ServiceStatus(srvName)
+		if status == service.StatusStopped {
+			return nil
+		}
+		restop--
+		fmt.Println("停止失败1次")
+		continue
+	}
+
+	return errors.New("停止失败")
 }
 
 func Start(srvName string) error {
@@ -58,11 +74,22 @@ func Start(srvName string) error {
 		return fmt.Errorf("service uninstall")
 	}
 
-	if status == service.StatusStopped {
-		return service.ServiceStart(srvName)
+	restart := 3
+	for restart > 0 {
+		err := service.ServiceStart(srvName)
+		if err != nil {
+			fmt.Println(err)
+		}
+		status, _ = service.ServiceStatus(srvName)
+		if status == service.StatusRunning {
+			return nil
+		}
+		restart--
+		fmt.Println("启动失败1次")
+		continue
 	}
 
-	return nil
+	return errors.New("启动失败")
 }
 
 func Uninstall(srvName string) error {
