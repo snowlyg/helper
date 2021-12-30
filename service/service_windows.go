@@ -259,7 +259,6 @@ func ServiceStatus(srcName string) (Status, error) {
 	if err != nil {
 		return StatusUnknown, err
 	}
-
 	switch status.State {
 	case svc.StartPending:
 		fallthrough
@@ -277,6 +276,52 @@ func ServiceStatus(srcName string) (Status, error) {
 		return StatusStopped, nil
 	default:
 		return StatusUnknown, fmt.Errorf("unknown status %v", status)
+	}
+}
+
+// status
+func ServiceProcessId(srcName string) (uint32, error) {
+	var processId uint32
+	m, err := mgr.Connect()
+	if err != nil {
+		return processId, err
+	}
+	defer m.Disconnect()
+
+	s, err := m.OpenService(srcName)
+	if err != nil {
+		if err.Error() == "The specified service does not exist as an installed service." {
+			return processId, nil
+		}
+		return processId, err
+	}
+	defer s.Close()
+
+	status, err := s.Query()
+	if err != nil {
+		return processId, err
+	}
+
+	processId = status.ProcessId
+
+	switch status.State {
+	case svc.StartPending:
+		fallthrough
+	case svc.Running:
+		processId = status.ProcessId
+		return processId, nil
+	case svc.PausePending:
+		fallthrough
+	case svc.Paused:
+		fallthrough
+	case svc.ContinuePending:
+		fallthrough
+	case svc.StopPending:
+		fallthrough
+	case svc.Stopped:
+		return processId, nil
+	default:
+		return processId, fmt.Errorf("unknown status %v", status)
 	}
 }
 

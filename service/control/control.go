@@ -3,7 +3,10 @@ package control
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
+	"github.com/shirou/gopsutil/v3/process"
+	"github.com/snowlyg/helper/dir"
 	"github.com/snowlyg/helper/service"
 )
 
@@ -32,6 +35,14 @@ func Status(srvName string) (service.Status, error) {
 	return status, nil
 }
 
+func ProcessId(srvName string) (uint32, error) {
+	processId, err := service.ServiceProcessId(srvName)
+	if err != nil {
+		return processId, err
+	}
+	return processId, nil
+}
+
 func Stop(srvName string) error {
 	status, err := service.ServiceStatus(srvName)
 	if err != nil {
@@ -50,6 +61,24 @@ func Stop(srvName string) error {
 		}
 		status, _ = service.ServiceStatus(srvName)
 		if status == service.StatusStopped {
+			pid, err := dir.ReadString("./.pid")
+			if err == nil {
+				ppid, _ := strconv.Atoi(pid)
+				if b, _ := process.PidExists(int32(ppid)); b {
+					ps, _ := process.Processes()
+					if len(ps) > 0 {
+						for _, p := range ps {
+							if p.Pid != int32(ppid) {
+								continue
+							}
+							err = p.Kill()
+							if err != nil {
+								fmt.Println(err)
+							}
+						}
+					}
+				}
+			}
 			return nil
 		}
 		restop--
@@ -82,6 +111,10 @@ func Start(srvName string) error {
 		}
 		status, _ = service.ServiceStatus(srvName)
 		if status == service.StatusRunning {
+			processId, err := service.ServiceProcessId(srvName)
+			if err == nil {
+				dir.WriteString("./.pid", strconv.FormatUint(uint64(processId), 10))
+			}
 			return nil
 		}
 		restart--

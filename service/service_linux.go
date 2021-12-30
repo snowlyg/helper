@@ -121,6 +121,10 @@ func ServiceStatus(srcName string) (Status, error) {
 	return StatusUnknown, ErrNotSuport
 }
 
+func ServiceProcessId(srcName string) (uint32, error) {
+	return 0, nil
+}
+
 func ServiceStart(srcName string) error {
 	return ErrNotSuport
 }
