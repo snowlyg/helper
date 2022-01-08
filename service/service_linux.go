@@ -14,16 +14,16 @@ import (
 )
 
 type systemd struct {
-	i        Interface
-	platform string
+	i    Interface
+	Name string
 }
 
 func init() {
-	var err error
-	interactive, err = isInteractive()
-	if err != nil {
-		panic(err)
-	}
+	// var err error
+	// interactive, err = isInteractive()
+	// if err != nil {
+	// 	panic(err)
+	// }
 }
 
 func NewService(i Interface, name string) (*systemd, error) {
@@ -57,7 +57,7 @@ func (s *systemd) String() string {
 }
 
 func (s *systemd) Platform() string {
-	return version
+	return ""
 }
 
 func (s *systemd) getHomeDir() (string, error) {
@@ -75,13 +75,13 @@ func (s *systemd) getHomeDir() (string, error) {
 }
 
 func (s *systemd) getServiceFilePath() (string, error) {
-	if s.userService {
-		homeDir, err := s.getHomeDir()
-		if err != nil {
-			return "", err
-		}
-		return homeDir + "/Library/LaunchAgents/" + s.Name + ".plist", nil
-	}
+	// if s.userService {
+	// 	homeDir, err := s.getHomeDir()
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	return homeDir + "/Library/LaunchAgents/" + s.Name + ".plist", nil
+	// }
 	return "/Library/LaunchDaemons/" + s.Name + ".plist", nil
 }
 
