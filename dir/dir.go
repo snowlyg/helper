@@ -182,7 +182,7 @@ func WriteBytes(filePath string, b []byte) (int, error) {
 	return fw.Write(b)
 }
 
-func WriteString(filePath string, s string) (int, error) {
+func WriteString(filePath, s string) (int, error) {
 	return WriteBytes(filePath, []byte(s))
 }
 

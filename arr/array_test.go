@@ -1,10 +1,8 @@
-
-
 package arr
 
 import "testing"
 
-func TestInArrayS(t *testing.T) {
+func TestInArray(t *testing.T) {
 	type args struct {
 		items []string
 		s     string
@@ -51,8 +49,8 @@ func TestInArrayS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := InArrayS(tt.args.items, tt.args.s); got != tt.want {
-				t.Errorf("InArrayS() = %v, want %v", got, tt.want)
+			if got := InArray(tt.args.items, tt.args.s); got != tt.want {
+				t.Errorf("InArray() = %v, want %v", got, tt.want)
 			}
 		})
 	}

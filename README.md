@@ -1,6 +1,10 @@
 # helper
 helper
 
+#### require
+- go 1.18+
+
+
 
 ## 安装
 
