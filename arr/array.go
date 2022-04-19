@@ -2,12 +2,10 @@ package arr
 
 import (
 	"strconv"
-
-	"golang.org/x/exp/constraints"
 )
 
 //InArray
-func InArray[T constraints.Ordered](items []T, s T) bool {
+func InArray[T comparable](items []T, s T) bool {
 	for _, item := range items {
 		if item == s {
 			return true
