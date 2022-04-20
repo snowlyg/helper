@@ -24,5 +24,5 @@ func main() {
 	if err != nil {
 		fmt.Printf("new service get error %v \n", err)
 	}
-	s.Run(false)
+	s.Run()
 }

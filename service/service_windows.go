@@ -22,12 +22,12 @@ var elog debug.Log
 
 var interactive = false
 
-// IsAnInteractiveSession 不能修改成 IsWindowsService 否则无法正常启动应用
+// IsWindowsService 不能修改成 IsWindowsService 否则无法正常启动应用
 func init() {
 	var err error
-	interactive, err = svc.IsAnInteractiveSession()
+	interactive, err = svc.IsWindowsService()
 	if err != nil {
-		elog.Info(1, fmt.Sprintf("IsAnInteractiveSession failed: %v", err))
+		elog.Info(1, fmt.Sprintf("IsWindowsService failed: %v", err))
 		panic(err)
 	}
 }
@@ -84,44 +84,40 @@ loop:
 	return false, 0
 }
 
-func (ws *WindowsService) Run(isDebug bool) error {
+func (ws *WindowsService) Run() error {
 	var err error
-	if !interactive {
-		if isDebug {
-			elog = debug.New(ws.Name)
-		} else {
-			elog, err = eventlog.Open(ws.Name)
-			if err != nil {
-				return err
-			}
+	if interactive {
+
+		elog, err = eventlog.Open(ws.Name)
+		if err != nil {
+			return err
 		}
 		defer elog.Close()
 
 		elog.Info(1, fmt.Sprintf("starting %s service", ws.Name))
+
 		run := svc.Run
-		if isDebug {
-			run = debug.Run
-		}
 		err = run(ws.Name, ws)
 		if err != nil {
 			elog.Error(1, fmt.Sprintf("%s service failed: %v", ws.Name, err))
 			return err
 		}
-		elog.Info(1, fmt.Sprintf("%s service stopped", ws.Name))
+
+	} else {
+		err = ws.i.Start()
+		if err != nil {
+			return err
+		}
+
+		sigChan := make(chan os.Signal, 1)
+
+		signal.Notify(sigChan, os.Interrupt)
+
+		<-sigChan
+
+		return ws.i.Stop()
 	}
-
-	err = ws.i.Start()
-	if err != nil {
-		return err
-	}
-
-	sigChan := make(chan os.Signal)
-
-	signal.Notify(sigChan, os.Interrupt)
-
-	<-sigChan
-
-	return ws.i.Stop()
+	return nil
 }
 
 func ServiceInstall(svcName, execPath, dispalyName, serviceStartName, pwd string, args ...string) error {

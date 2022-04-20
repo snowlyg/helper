@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
 	"github.com/snowlyg/helper/dir"
@@ -55,38 +56,48 @@ func Stop(srvName string) error {
 
 	restop := 3
 	for restop > 0 {
-		err := service.ServiceStop(srvName)
-		if err != nil {
-			fmt.Println(err)
-		}
-		status, _ = service.ServiceStatus(srvName)
-		if status == service.StatusStopped {
-			pid, err := dir.ReadString("./.pid")
-			if err == nil {
-				ppid, _ := strconv.Atoi(pid)
-				if b, _ := process.PidExists(int32(ppid)); b {
-					ps, _ := process.Processes()
-					if len(ps) > 0 {
-						for _, p := range ps {
-							if p.Pid != int32(ppid) {
-								continue
-							}
-							err = p.Kill()
-							if err != nil {
-								fmt.Println(err)
-							}
-						}
-					}
-				}
+		go func() {
+			err := service.ServiceStop(srvName)
+			if err != nil {
+				fmt.Println(err)
 			}
-			return nil
-		}
+		}()
+		fmt.Println(restop)
+		time.Sleep(1 * time.Second)
 		restop--
-		fmt.Println("停止失败1次")
-		continue
 	}
 
-	return errors.New("停止失败")
+	status, err = service.ServiceStatus(srvName)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	if status != service.StatusStopped {
+		return errors.New("服务未停止")
+	}
+
+	pid, err := dir.ReadString("./.pid")
+	if err != nil {
+		return err
+	}
+
+	ppid, _ := strconv.Atoi(pid)
+	if b, _ := process.PidExists(int32(ppid)); b {
+		ps, _ := process.Processes()
+		if len(ps) > 0 {
+			for _, p := range ps {
+				if p.Pid != int32(ppid) {
+					continue
+				}
+				err = p.Kill()
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func Start(srvName string) error {
