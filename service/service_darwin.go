@@ -60,7 +60,7 @@ func NewService(i Interface, name string) (*darwinLaunchdService, error) {
 	return ws, nil
 }
 
-func (s *darwinLaunchdService) Run(isDebug bool) error {
+func (s *darwinLaunchdService) Run() error {
 	err := s.i.Start()
 	if err != nil {
 		return err
