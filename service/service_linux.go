@@ -34,7 +34,7 @@ func NewService(i Interface, name string) (*systemd, error) {
 	return s, nil
 }
 
-func (s *systemd) Run(isDebug bool) error {
+func (s *systemd) Run() error {
 	err := s.i.Start()
 	if err != nil {
 		return err
