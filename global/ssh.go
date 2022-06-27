@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -159,4 +160,17 @@ func (c *Cli) GetDatetime() (string, error) {
 	}
 
 	return datetime, nil
+}
+
+// GetCpuTemp CPU温度
+func (c *Cli) GetCpuTemp() (float64, error) {
+	cpuTemp, err := c.Run("cat /sys/class/thermal/thermal_zone0/temp")
+	if err != nil {
+		return 0, err
+	}
+	f, err := strconv.ParseFloat(cpuTemp, 64)
+	if err != nil {
+		return 0, err
+	}
+	return f / 1000, nil
 }
