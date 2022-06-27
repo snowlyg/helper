@@ -92,19 +92,19 @@ func (c *Cli) GetMem() (DeviceMem, error) {
 	var deviceMen DeviceMem
 	totalDec, err := c.getMenInfo("cat /proc/meminfo | grep -w MemTotal", "MemTotal:")
 	if err != nil {
-		return deviceMen, fmt.Errorf("MemTotal %w", err)
+		return deviceMen, fmt.Errorf("memTotal %w", err)
 	}
 	freeDec, err := c.getMenInfo("cat /proc/meminfo | grep -w MemFree", "MemFree:")
 	if err != nil {
-		return deviceMen, fmt.Errorf("MemFree %w", err)
+		return deviceMen, fmt.Errorf("memFree %w", err)
 	}
 	buffersDec, err := c.getMenInfo("cat /proc/meminfo | grep -w Buffers", "Buffers:")
 	if err != nil {
-		return deviceMen, fmt.Errorf("Buffers %w", err)
+		return deviceMen, fmt.Errorf("buffers %w", err)
 	}
 	cachedDec, err := c.getMenInfo("cat /proc/meminfo | grep -w Cached", "Cached:")
 	if err != nil {
-		return deviceMen, fmt.Errorf("Cached %w", err)
+		return deviceMen, fmt.Errorf("cached %w", err)
 	}
 
 	deviceMen.Total = totalDec
@@ -117,7 +117,7 @@ func (c *Cli) GetMem() (DeviceMem, error) {
 func (c *Cli) getMenInfo(cmd, key string) (decimal.Decimal, error) {
 	info, err := c.Run(cmd)
 	if err != nil {
-		return decimal.Zero, fmt.Errorf("run %w", err)
+		return decimal.Zero, fmt.Errorf("%s %w", cmd, err)
 	}
 
 	dec, err := decimal.NewFromString(strings.TrimSpace(strings.ReplaceAll(strings.ReplaceAll(info, key, ""), "kB", "")))
@@ -131,7 +131,7 @@ func (c *Cli) getMenInfo(cmd, key string) (decimal.Decimal, error) {
 func (c *Cli) GetDf() (string, error) {
 	total, err := c.Run("df /sdcard -h")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("df /sdcard -h  %w", err)
 	}
 	flysnowRegexp := regexp.MustCompile(`(100|[1-9]?\d(\.\d\d?\d?)?)%`)
 	params := flysnowRegexp.FindStringSubmatch(total)
@@ -146,7 +146,7 @@ func (c *Cli) GetDf() (string, error) {
 func (c *Cli) GetSignal() (string, error) {
 	signal, err := c.Run("iw dev wlan0 link | grep -w signal:")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("iw dev wlan0 link | grep -w signal:  %w", err)
 	}
 
 	return strings.TrimSpace(strings.ReplaceAll(signal, "signal:", "")), nil
@@ -156,7 +156,7 @@ func (c *Cli) GetSignal() (string, error) {
 func (c *Cli) GetDatetime() (string, error) {
 	datetime, err := c.Run("date +'%Y/%m/%d %T %Z'")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("date %w", err)
 	}
 
 	return datetime, nil
@@ -166,11 +166,11 @@ func (c *Cli) GetDatetime() (string, error) {
 func (c *Cli) GetCpuTemp() (float64, error) {
 	cpuTemp, err := c.Run("cat /sys/class/thermal/thermal_zone0/temp")
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("cat /sys/class/thermal/thermal_zone0/temp %w", err)
 	}
-	f, err := strconv.ParseFloat(cpuTemp, 64)
+	f, err := strconv.ParseFloat(strings.Trim(cpuTemp, "\n"), 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("ParseFloat %w", err)
 	}
 	return f / 1000, nil
 }
