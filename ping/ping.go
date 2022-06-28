@@ -19,6 +19,8 @@ func GetPingMsg(devIp string) (bool, string) {
 		return false, err.Error()
 	}
 	pinger.Count = 3
+	// 修改相关问题https://githubmemory.com/repo/go-ping/ping/issues/168
+	pinger.Size = 548
 	pinger.Interval = time.Duration(500 * time.Millisecond)
 	pinger.Timeout = time.Duration(1500 * time.Millisecond)
 	pinger.SetPrivileged(true)
