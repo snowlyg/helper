@@ -171,13 +171,27 @@ func (c *Cli) GetDatetime() (string, error) {
 
 // GetCpuTemp CPU温度
 func (c *Cli) GetCpuTemp() (float64, error) {
-	cpuTemp, err := c.Run("cat /sys/class/thermal/thermal_zone0/temp")
+	var ct float64
+	cmd := "acpi -t"
+	cpuTemp, err := c.Run(cmd)
 	if err != nil {
-		return 0, fmt.Errorf("cat /sys/class/thermal/thermal_zone0/temp %w", err)
+		return 0, fmt.Errorf("%s : %w", cmd, err)
 	}
-	f, err := strconv.ParseFloat(strings.Trim(cpuTemp, "\n"), 64)
-	if err != nil {
-		return 0, fmt.Errorf("ParseFloat %w", err)
+	cpuTemps := strings.Split(cpuTemp, "\n\t")
+
+	for _, v := range cpuTemps {
+		flysnowRegexp := regexp.MustCompile(`[1-9]\d*\.\d*|0\.\d*[1-9]\d*$ 或 ^(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*))`)
+		params := flysnowRegexp.FindStringSubmatch(v)
+		if len(params) > 0 {
+			f, err := strconv.ParseFloat(strings.Trim(params[0], "\n"), 64)
+			if err != nil {
+				return 0, fmt.Errorf("ParseFloat %w", err)
+			}
+			current := f / 1000
+			if current > ct {
+				ct = current
+			}
+		}
 	}
-	return f / 1000, nil
+	return ct, nil
 }
