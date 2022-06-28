@@ -187,7 +187,7 @@ func (c *Cli) GetCpuTemp() (float64, error) {
 			if err != nil {
 				return 0, fmt.Errorf("ParseFloat %w", err)
 			}
-			current := f / 1000
+			current := f / 100
 			if current > ct {
 				ct = current
 			}
