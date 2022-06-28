@@ -177,10 +177,10 @@ func (c *Cli) GetCpuTemp() (float64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%s : %w", cmd, err)
 	}
-	cpuTemps := strings.Split(cpuTemp, "\n\t")
+	cpuTemps := strings.Split(cpuTemp, "\n")
 
 	for _, v := range cpuTemps {
-		flysnowRegexp := regexp.MustCompile(`[1-9]\d*\.\d*|0\.\d*[1-9]\d*$ 或 ^(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*))`)
+		flysnowRegexp := regexp.MustCompile(`[1-9]\d*\.\d*|0\.\d*[1-9]\d*`)
 		params := flysnowRegexp.FindStringSubmatch(v)
 		if len(params) > 0 {
 			f, err := strconv.ParseFloat(strings.Trim(params[0], "\n"), 64)
