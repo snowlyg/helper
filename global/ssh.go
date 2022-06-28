@@ -1,6 +1,7 @@
 package global
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -10,6 +11,12 @@ import (
 
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/ssh"
+)
+
+var (
+	ErrConnectFail    = errors.New("SSH连接失败")
+	ErrNewSessionFail = errors.New("SSH新建会话失败")
+	ErrRunCommandFail = errors.New("SSH执行命令失败")
 )
 
 type Cli struct {
@@ -44,18 +51,18 @@ func NewSSH(ip string, username string, password string, port ...int) *Cli {
 func (c Cli) Run(shell string) (string, error) {
 	if c.client == nil {
 		if err := c.connect(); err != nil {
-			return "", fmt.Errorf("连接失败 %w", err)
+			return "", ErrConnectFail
 		}
 	}
 	defer c.client.Close()
 	session, err := c.client.NewSession()
 	if err != nil {
-		return "", fmt.Errorf("新建会话失败 %w", err)
+		return "", ErrNewSessionFail
 	}
 	defer session.Close()
 	buf, err := session.CombinedOutput(shell)
 	if err != nil {
-		return "", fmt.Errorf("执行命令失败 %w", err)
+		return "", ErrRunCommandFail
 	}
 
 	c.LastResult = string(buf)
