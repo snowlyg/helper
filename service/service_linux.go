@@ -5,12 +5,11 @@
 package service
 
 import (
-	"errors"
+	"bufio"
+	"fmt"
+	"io/ioutil"
 	"os"
-	"os/signal"
-	"os/user"
-	"syscall"
-	"text/template"
+	"strings"
 )
 
 var cgroupFile = "/proc/1/cgroup"
@@ -33,11 +32,6 @@ func (sc linuxSystemService) Interactive() bool {
 }
 func (sc linuxSystemService) New(i Interface, c *Config) (Service, error) {
 	return sc.new(i, sc.String(), c)
-}
-
-type systemd struct {
-	i    Interface
-	Name string
 }
 
 func init() {

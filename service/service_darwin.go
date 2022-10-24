@@ -51,17 +51,17 @@ type darwinLaunchdService struct {
 	userService bool
 }
 
-func NewService(i Interface, name string) (*darwinLaunchdService, error) {
+func NewService(i Interface, c *Config) (*darwinLaunchdService, error) {
 	ws := &darwinLaunchdService{
 		i:           i,
-		Name:        name,
+		Name:        c.Name,
 		userService: false,
 	}
 	return ws, nil
 }
 
 func (s *darwinLaunchdService) Run() error {
-	err := s.i.Start()
+	err := s.i.Start(nil)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (s *darwinLaunchdService) Run() error {
 		<-sigChan
 	}()
 
-	return s.i.Stop()
+	return s.i.Stop(nil)
 }
 
 func (s *darwinLaunchdService) String() string {

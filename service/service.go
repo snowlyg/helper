@@ -16,6 +16,39 @@ const (
 	StatusUninstall
 )
 
+const (
+	optionKeepAlive            = "KeepAlive"
+	optionKeepAliveDefault     = true
+	optionRunAtLoad            = "RunAtLoad"
+	optionRunAtLoadDefault     = false
+	optionUserService          = "UserService"
+	optionUserServiceDefault   = false
+	optionSessionCreate        = "SessionCreate"
+	optionSessionCreateDefault = false
+	optionLogOutput            = "LogOutput"
+	optionLogOutputDefault     = false
+	optionPrefix               = "Prefix"
+	optionPrefixDefault        = "application"
+
+	optionRunWait            = "RunWait"
+	optionReloadSignal       = "ReloadSignal"
+	optionPIDFile            = "PIDFile"
+	optionLimitNOFILE        = "LimitNOFILE"
+	optionLimitNOFILEDefault = -1 // -1 = don't set in configuration
+	optionRestart            = "Restart"
+
+	optionSuccessExitStatus = "SuccessExitStatus"
+
+	optionSystemdScript = "SystemdScript"
+	optionSysvScript    = "SysvScript"
+	optionRCSScript     = "RCSScript"
+	optionUpstartScript = "UpstartScript"
+	optionLaunchdConfig = "LaunchdConfig"
+	optionOpenRCScript  = "OpenRCScript"
+
+	optionLogDirectory = "LogDirectory"
+)
+
 var (
 	// ErrNameFieldRequired is returned when Config.Name is empty.
 	ErrNameFieldRequired = errors.New("缺失配置文件")
@@ -32,8 +65,19 @@ var (
 )
 
 type Interface interface {
-	Start() error
-	Stop() error
+	Start(s Service) error
+	Stop(s Service) error
+}
+
+// NewService creates a new service based on a service interface and configuration.
+func NewService(i Interface, c *Config) (Service, error) {
+	if len(c.Name) == 0 {
+		return nil, ErrNameFieldRequired
+	}
+	if system == nil {
+		return nil, ErrNoServiceSystemDetected
+	}
+	return system.New(i, c)
 }
 
 // ChooseSystem chooses a system from the given system services.
@@ -230,6 +274,17 @@ type Service interface {
 	Status() (Status, error)
 }
 
+// Logger writes to the system log.
+type Logger interface {
+	Error(v ...interface{}) error
+	Warning(v ...interface{}) error
+	Info(v ...interface{}) error
+
+	Errorf(format string, a ...interface{}) error
+	Warningf(format string, a ...interface{}) error
+	Infof(format string, a ...interface{}) error
+}
+
 // ControlAction list valid string texts to use in Control.
 var ControlAction = [5]string{"start", "stop", "restart", "install", "uninstall"}
 
@@ -254,15 +309,4 @@ func Control(s Service, action string) error {
 		return fmt.Errorf("Failed to %s %v: %v", action, s, err)
 	}
 	return nil
-}
-
-// Logger writes to the system log.
-type Logger interface {
-	Error(v ...interface{}) error
-	Warning(v ...interface{}) error
-	Info(v ...interface{}) error
-
-	Errorf(format string, a ...interface{}) error
-	Warningf(format string, a ...interface{}) error
-	Infof(format string, a ...interface{}) error
 }

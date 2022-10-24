@@ -1,3 +1,4 @@
+// +build windows
 // Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -37,10 +38,10 @@ type WindowsService struct {
 	i    Interface
 }
 
-func NewService(i Interface, name string) (*WindowsService, error) {
+func NewWindowsService(i Interface, c *Config) (*WindowsService, error) {
 	ws := &WindowsService{
 		i:    i,
-		Name: name,
+		Name: c.Name,
 	}
 	return ws, nil
 }
@@ -49,7 +50,7 @@ func (ws *WindowsService) Execute(args []string, r <-chan svc.ChangeRequest, cha
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
 	changes <- svc.Status{State: svc.StartPending}
 
-	if err := ws.i.Start(); err != nil {
+	if err := ws.i.Start(nil); err != nil {
 		elog.Info(1, fmt.Sprintf("%s service start failed: %v", ws.Name, err))
 		return true, 1
 	}
@@ -63,14 +64,14 @@ loop:
 			changes <- c.CurrentStatus
 		case svc.Stop:
 			changes <- svc.Status{State: svc.StopPending}
-			if err := ws.i.Stop(); err != nil {
+			if err := ws.i.Stop(nil); err != nil {
 				elog.Info(1, fmt.Sprintf("%s service stop failed: %v", ws.Name, err))
 				return true, 2
 			}
 			break loop
 		case svc.Shutdown:
 			changes <- svc.Status{State: svc.StopPending}
-			err := ws.i.Stop()
+			err := ws.i.Stop(nil)
 			if err != nil {
 				elog.Info(1, fmt.Sprintf("%s service shutdown failed: %v", ws.Name, err))
 				return true, 2
@@ -104,7 +105,7 @@ func (ws *WindowsService) Run() error {
 		}
 
 	} else {
-		err = ws.i.Start()
+		err = ws.i.Start(nil)
 		if err != nil {
 			return err
 		}
@@ -115,7 +116,7 @@ func (ws *WindowsService) Run() error {
 
 		<-sigChan
 
-		return ws.i.Stop()
+		return ws.i.Stop(nil)
 	}
 	return nil
 }
