@@ -13,156 +13,146 @@ import (
 	"text/template"
 )
 
+var cgroupFile = "/proc/1/cgroup"
+
+type linuxSystemService struct {
+	name        string
+	detect      func() bool
+	interactive func() bool
+	new         func(i Interface, platform string, c *Config) (Service, error)
+}
+
+func (sc linuxSystemService) String() string {
+	return sc.name
+}
+func (sc linuxSystemService) Detect() bool {
+	return sc.detect()
+}
+func (sc linuxSystemService) Interactive() bool {
+	return sc.interactive()
+}
+func (sc linuxSystemService) New(i Interface, c *Config) (Service, error) {
+	return sc.new(i, sc.String(), c)
+}
+
 type systemd struct {
 	i    Interface
 	Name string
 }
 
 func init() {
-	// var err error
-	// interactive, err = isInteractive()
-	// if err != nil {
-	// 	panic(err)
-	// }
-}
-
-func NewService(i Interface, name string) (*systemd, error) {
-	s := &systemd{
-		i: i,
-	}
-
-	return s, nil
-}
-
-func (s *systemd) Run() error {
-	err := s.i.Start()
-	if err != nil {
-		return err
-	}
-
-	func() {
-		var sigChan = make(chan os.Signal, 3)
-		signal.Notify(sigChan, syscall.SIGTERM, os.Interrupt)
-		<-sigChan
-	}()
-
-	return s.i.Stop()
-}
-
-func (s *systemd) String() string {
-	if len(s.Name) > 0 {
-		return s.Name
-	}
-	return s.Name
-}
-
-func (s *systemd) Platform() string {
-	return ""
-}
-
-func (s *systemd) getHomeDir() (string, error) {
-	u, err := user.Current()
-	if err == nil {
-		return u.HomeDir, nil
-	}
-
-	// alternate methods
-	homeDir := os.Getenv("HOME") // *nix
-	if homeDir == "" {
-		return "", errors.New("User home directory not found.")
-	}
-	return homeDir, nil
-}
-
-func (s *systemd) getServiceFilePath() (string, error) {
-	// if s.userService {
-	// 	homeDir, err := s.getHomeDir()
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-	// 	return homeDir + "/Library/LaunchAgents/" + s.Name + ".plist", nil
-	// }
-	return "/Library/LaunchDaemons/" + s.Name + ".plist", nil
-}
-
-func (s *systemd) template() *template.Template {
-	functions := template.FuncMap{
-		"bool": func(v bool) string {
-			if v {
-				return "true"
-			}
-			return "false"
+	ChooseSystem(linuxSystemService{
+		name:   "linux-systemd",
+		detect: isSystemd,
+		interactive: func() bool {
+			is, _ := isInteractive()
+			return is
 		},
+		new: newSystemdService,
+	},
+		linuxSystemService{
+			name:   "linux-upstart",
+			detect: isUpstart,
+			interactive: func() bool {
+				is, _ := isInteractive()
+				return is
+			},
+			new: newUpstartService,
+		},
+		linuxSystemService{
+			name:   "linux-openrc",
+			detect: isOpenRC,
+			interactive: func() bool {
+				is, _ := isInteractive()
+				return is
+			},
+			new: newOpenRCService,
+		},
+		linuxSystemService{
+			name:   "linux-rcs",
+			detect: isRCS,
+			interactive: func() bool {
+				is, _ := isInteractive()
+				return is
+			},
+			new: newRCSService,
+		},
+		linuxSystemService{
+			name:   "unix-systemv",
+			detect: func() bool { return true },
+			interactive: func() bool {
+				is, _ := isInteractive()
+				return is
+			},
+			new: newSystemVService,
+		},
+	)
+}
+
+func binaryName(pid int) (string, error) {
+	statPath := fmt.Sprintf("/proc/%d/stat", pid)
+	dataBytes, err := ioutil.ReadFile(statPath)
+	if err != nil {
+		return "", err
 	}
 
-	customConfig := "LaunchdConfig"
+	// First, parse out the image name
+	data := string(dataBytes)
+	binStart := strings.IndexRune(data, '(') + 1
+	binEnd := strings.IndexRune(data[binStart:], ')')
+	return data[binStart : binStart+binEnd], nil
+}
 
-	if customConfig != "" {
-		return template.Must(template.New("").Funcs(functions).Parse(customConfig))
-	} else {
-		return template.Must(template.New("").Funcs(functions).Parse(launchdConfig))
+func isInteractive() (bool, error) {
+	inContainer, err := isInContainer(cgroupFile)
+	if err != nil {
+		return false, err
 	}
+
+	if inContainer {
+		return true, nil
+	}
+
+	ppid := os.Getppid()
+	if ppid == 1 {
+		return false, nil
+	}
+
+	binary, _ := binaryName(ppid)
+	return binary != "systemd", nil
 }
 
-func ServiceInstall(svcName, execPath, dispalyName, serviceStartName, pwd string, args ...string) error {
-	return ErrNotSuport
+// isInContainer checks if the service is being executed in docker or lxc
+// container.
+func isInContainer(cgroupPath string) (bool, error) {
+	const maxlines = 5 // maximum lines to scan
+
+	f, err := os.Open(cgroupPath)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	scan := bufio.NewScanner(f)
+
+	lines := 0
+	for scan.Scan() && !(lines > maxlines) {
+		if strings.Contains(scan.Text(), "docker") || strings.Contains(scan.Text(), "lxc") {
+			return true, nil
+		}
+		lines++
+	}
+	if err := scan.Err(); err != nil {
+		return false, err
+	}
+
+	return false, nil
 }
 
-func ServiceUninstall(srcName string) error {
-	return ErrNotSuport
+var tf = map[string]interface{}{
+	"cmd": func(s string) string {
+		return `"` + strings.Replace(s, `"`, `\"`, -1) + `"`
+	},
+	"cmdEscape": func(s string) string {
+		return strings.Replace(s, " ", `\x20`, -1)
+	},
 }
-
-func ServiceStop(srcName string) error {
-	return ErrNotSuport
-}
-
-// status
-func ServiceStatus(srcName string) (Status, error) {
-	return StatusUnknown, ErrNotSuport
-}
-
-func ServiceProcessId(srcName string) (uint32, error) {
-	return 0, nil
-}
-
-func ServiceStart(srcName string) error {
-	return ErrNotSuport
-}
-
-var launchdConfig = `<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
-"http://www.apple.com/DTDs/PropertyList-1.0.dtd" >
-<plist version='1.0'>
-  <dict>
-    <key>Label</key>
-    <string>{{html .Name}}</string>
-    <key>ProgramArguments</key>
-    <array>
-      <string>{{html .Path}}</string>
-    {{range .Config.Arguments}}
-      <string>{{html .}}</string>
-    {{end}}
-    </array>
-    {{if .UserName}}<key>UserName</key>
-    <string>{{html .UserName}}</string>{{end}}
-    {{if .ChRoot}}<key>RootDirectory</key>
-    <string>{{html .ChRoot}}</string>{{end}}
-    {{if .WorkingDirectory}}<key>WorkingDirectory</key>
-    <string>{{html .WorkingDirectory}}</string>{{end}}
-    <key>SessionCreate</key>
-    <{{bool .SessionCreate}}/>
-    <key>KeepAlive</key>
-    <{{bool .KeepAlive}}/>
-    <key>RunAtLoad</key>
-    <{{bool .RunAtLoad}}/>
-    <key>Disabled</key>
-    <false/>
-
-    <key>StandardOutPath</key>
-    <string>/usr/local/var/log/{{html .Name}}.out.log</string>
-    <key>StandardErrorPath</key>
-    <string>/usr/local/var/log/{{html .Name}}.err.log</string>
-
-  </dict>
-</plist>
-`
