@@ -1,4 +1,6 @@
+//go:build windows
 // +build windows
+
 // Copyright 2012 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -14,44 +16,71 @@ import (
 
 	"golang.org/x/sys/windows/registry"
 	"golang.org/x/sys/windows/svc"
-	"golang.org/x/sys/windows/svc/debug"
 	"golang.org/x/sys/windows/svc/eventlog"
 	"golang.org/x/sys/windows/svc/mgr"
 )
 
-var elog debug.Log
+var version = "windows-service"
 
 var interactive = false
 
 // IsWindowsService 不能修改成 IsWindowsService 否则无法正常启动应用
 func init() {
+	ChooseSystem(windowsSystem{})
 	var err error
 	interactive, err = svc.IsWindowsService()
 	if err != nil {
-		elog.Info(1, fmt.Sprintf("IsWindowsService failed: %v", err))
 		panic(err)
 	}
 }
 
+type windowsSystem struct{}
+
+func (windowsSystem) String() string {
+	return version
+}
+
+func (windowsSystem) Detect() bool {
+	return true
+}
+func (windowsSystem) Interactive() bool {
+	return interactive
+}
+func (windowsSystem) New(i Interface, c *Config) (Service, error) {
+	ws := &WindowsService{
+		i: i,
+		c: c,
+	}
+	return ws, nil
+}
+
 type WindowsService struct {
-	Name string
-	i    Interface
+	c *Config
+	i Interface
 }
 
 func NewWindowsService(i Interface, c *Config) (*WindowsService, error) {
 	ws := &WindowsService{
-		i:    i,
-		Name: c.Name,
+		i: i,
+		c: c,
 	}
 	return ws, nil
 }
 
 func (ws *WindowsService) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (bool, uint32) {
+	elog, err := eventlog.Open(ws.c.Name)
+	if err != nil {
+		return true, 1
+	}
+	defer elog.Close()
+
+	elog.Info(1, fmt.Sprintf("%s service execute", ws.c.Name))
+
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
 	changes <- svc.Status{State: svc.StartPending}
 
 	if err := ws.i.Start(nil); err != nil {
-		elog.Info(1, fmt.Sprintf("%s service start failed: %v", ws.Name, err))
+		elog.Info(1, fmt.Sprintf("%s service start failed: %v", ws.c.Name, err))
 		return true, 1
 	}
 
@@ -61,19 +90,22 @@ loop:
 		c := <-r
 		switch c.Cmd {
 		case svc.Interrogate:
+			elog.Info(1, fmt.Sprintf("%s service current status", ws.c.Name))
 			changes <- c.CurrentStatus
 		case svc.Stop:
+			elog.Info(1, fmt.Sprintf("%s service stop", ws.c.Name))
 			changes <- svc.Status{State: svc.StopPending}
 			if err := ws.i.Stop(nil); err != nil {
-				elog.Info(1, fmt.Sprintf("%s service stop failed: %v", ws.Name, err))
+				elog.Info(1, fmt.Sprintf("%s service stop failed: %v", ws.c.Name, err))
 				return true, 2
 			}
 			break loop
 		case svc.Shutdown:
+			elog.Info(1, fmt.Sprintf("%s service shutdown", ws.c.Name))
 			changes <- svc.Status{State: svc.StopPending}
 			err := ws.i.Stop(nil)
 			if err != nil {
-				elog.Info(1, fmt.Sprintf("%s service shutdown failed: %v", ws.Name, err))
+				elog.Info(1, fmt.Sprintf("%s service shutdown failed: %v", ws.c.Name, err))
 				return true, 2
 			}
 			break loop
@@ -86,26 +118,25 @@ loop:
 }
 
 func (ws *WindowsService) Run() error {
-	var err error
 	if interactive {
 
-		elog, err = eventlog.Open(ws.Name)
+		elog, err := eventlog.Open(ws.c.Name)
 		if err != nil {
 			return err
 		}
 		defer elog.Close()
 
-		elog.Info(1, fmt.Sprintf("starting %s service", ws.Name))
+		elog.Info(1, fmt.Sprintf("starting %s service", ws.c.Name))
 
 		run := svc.Run
-		err = run(ws.Name, ws)
+		err = run(ws.c.Name, ws)
 		if err != nil {
-			elog.Error(1, fmt.Sprintf("%s service failed: %v", ws.Name, err))
+			elog.Error(1, fmt.Sprintf("%s service run failed: %v", ws.c.Name, err))
 			return err
 		}
 
 	} else {
-		err = ws.i.Start(nil)
+		err := ws.i.Start(nil)
 		if err != nil {
 			return err
 		}
@@ -139,15 +170,87 @@ func ServiceInstall(svcName, execPath, dispalyName, serviceStartName, pwd string
 		Password:         pwd,
 	}, args...)
 	if err != nil {
-		return fmt.Errorf("CreateService() failed: %s", err)
+		return fmt.Errorf("create service failed: %s", err)
 	}
 	defer s.Close()
 	err = eventlog.InstallAsEventCreate(svcName, eventlog.Error|eventlog.Warning|eventlog.Info)
 	if err != nil {
 		s.Delete()
-		return fmt.Errorf("InstallAsEventCreate() failed: %s", err)
+		return fmt.Errorf("install as event create failed: %s", err)
 	}
 	return nil
+}
+
+// Start signals to the OS service manager the given service should start.
+func (ws *WindowsService) Start() error {
+	return ServiceStart(ws.c.Name)
+}
+
+// Stop signals to the OS service manager the given service should stop.
+func (ws *WindowsService) Stop() error {
+	return ServiceStop(ws.c.Name)
+}
+
+// Restart signals to the OS service manager the given service should stop then start.
+func (ws *WindowsService) Restart() error {
+	if err := ServiceStop(ws.c.Name); err != nil {
+		return err
+	}
+	return ServiceStart(ws.c.Name)
+}
+
+// Install setups up the given service in the OS service manager. This may require
+// greater rights. Will return an error if it is already installed.
+func (ws *WindowsService) Install() error {
+	return nil
+}
+
+// Uninstall removes the given service from the OS service manager. This may require
+// greater rights. Will return an error if the service is not present.
+func (ws *WindowsService) Uninstall() error {
+	elog, err := eventlog.Open(ws.c.Name)
+	if err != nil {
+		return err
+	}
+	defer elog.Close()
+
+	if err := ServiceUninstall(ws.c.Name); err != nil {
+		elog.Error(1, fmt.Sprintf("%s service uninstall failed: %v", ws.c.Name, err))
+		return err
+	}
+	elog.Info(1, fmt.Sprintf("uninstall %s service", ws.c.Name))
+	return nil
+}
+
+// Opens and returns a system logger. If the user program is running
+// interactively rather then as a service, the returned logger will write to
+// os.Stderr. If errs is non-nil errors will be sent on errs as well as
+// returned from Logger's functions.
+func (ws *WindowsService) Logger(errs chan<- error) (Logger, error) {
+	return nil, nil
+}
+
+// SystemLogger opens and returns a system logger. If errs is non-nil errors
+// will be sent on errs as well as returned from Logger's functions.
+func (ws *WindowsService) SystemLogger(errs chan<- error) (Logger, error) {
+	return nil, nil
+}
+
+// String displays the name of the service. The display name if present,
+// otherwise the name.
+func (ws *WindowsService) String() string {
+	return version
+}
+
+// Platform displays the name of the system that manages the service.
+// In most cases this will be the same as service.Platform().
+func (ws *WindowsService) Platform() string {
+	return ws.String()
+}
+
+// Status returns the current service status.
+func (ws *WindowsService) Status() (Status, error) {
+	return ServiceStatus(ws.c.Name)
 }
 
 func ServiceUninstall(srcName string) error {
@@ -169,6 +272,7 @@ func ServiceUninstall(srcName string) error {
 	if err != nil {
 		return fmt.Errorf("RemoveEventLogSource() failed: %s", err)
 	}
+
 	return nil
 }
 
