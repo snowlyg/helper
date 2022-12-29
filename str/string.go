@@ -38,6 +38,12 @@ func HasChinese(str string) bool {
 }
 
 func InStrArray(s string, ss []string) bool {
+	if ss == nil {
+		return false
+	}
+	if len(ss) == 0 {
+		return false
+	}
 	for _, item := range ss {
 		if s == item {
 			return true
