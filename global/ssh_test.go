@@ -2,6 +2,7 @@ package global
 
 import (
 	_ "embed"
+	"log"
 	"os"
 	"testing"
 )
@@ -9,9 +10,9 @@ import (
 func Test_NewSSH(t *testing.T) {
 	sshPwd := os.Getenv("sshPwd")
 	t.Run("测试新建ssh链接", func(t *testing.T) {
-		ip := "10.0.0.26"
+		ip := "10.0.1.116"
 		name := "root"
-		sshClient := NewSSH(ip, name, sshPwd, 2222)
+		sshClient := NewSSH(ip, name, sshPwd, true, 22)
 		if sshClient == nil {
 			t.Errorf("客户端为空")
 			return
@@ -21,26 +22,27 @@ func Test_NewSSH(t *testing.T) {
 func Test_GetMem(t *testing.T) {
 	sshPwd := os.Getenv("sshPwd")
 	t.Run("测试获取设备内存", func(t *testing.T) {
-		ip := "10.0.0.110"
+		ip := "10.0.1.116"
 		name := "root"
-		sshClient := NewSSH(ip, name, sshPwd, 2222)
+		sshClient := NewSSH(ip, name, sshPwd, true, 22)
 		if sshClient == nil {
 			t.Errorf("客户端为空")
 			return
 		}
-		_, err := sshClient.GetMem()
+		mem, err := sshClient.GetMem()
 		if err != nil {
 			t.Errorf(err.Error())
 			return
 		}
+		log.Println(mem.Total.String())
 	})
 }
 func Test_GetDf(t *testing.T) {
 	sshPwd := os.Getenv("sshPwd")
 	t.Run("测试获取设备硬盘使用", func(t *testing.T) {
-		ip := "10.0.0.110"
+		ip := "10.0.1.116"
 		name := "root"
-		sshClient := NewSSH(ip, name, sshPwd, 2222)
+		sshClient := NewSSH(ip, name, sshPwd, true, 22)
 		if sshClient == nil {
 			t.Errorf("客户端为空")
 			return
@@ -55,9 +57,9 @@ func Test_GetDf(t *testing.T) {
 func Test_GetSignal(t *testing.T) {
 	sshPwd := os.Getenv("sshPwd")
 	t.Run("测试获取设备信号使用", func(t *testing.T) {
-		ip := "10.0.0.110"
+		ip := "10.0.1.116"
 		name := "root"
-		sshClient := NewSSH(ip, name, sshPwd, 2222)
+		sshClient := NewSSH(ip, name, sshPwd, true, 22)
 		if sshClient == nil {
 			t.Errorf("客户端为空")
 			return
@@ -73,9 +75,9 @@ func Test_GetSignal(t *testing.T) {
 func Test_GetDatetime(t *testing.T) {
 	sshPwd := os.Getenv("sshPwd")
 	t.Run("测试获取设备时间使用", func(t *testing.T) {
-		ip := "10.0.0.110"
+		ip := "10.0.1.116"
 		name := "root"
-		sshClient := NewSSH(ip, name, sshPwd, 2222)
+		sshClient := NewSSH(ip, name, sshPwd, true, 22)
 		if sshClient == nil {
 			t.Errorf("客户端为空")
 			return
@@ -90,9 +92,9 @@ func Test_GetDatetime(t *testing.T) {
 func Test_GetCpuTemp(t *testing.T) {
 	sshPwd := os.Getenv("sshPwd")
 	t.Run("测试获取设备时间使用", func(t *testing.T) {
-		ip := "10.0.0.177"
+		ip := "10.0.1.116"
 		name := "root"
-		sshClient := NewSSH(ip, name, sshPwd, 2222)
+		sshClient := NewSSH(ip, name, sshPwd, true, 22)
 		if sshClient == nil {
 			t.Errorf("客户端为空")
 			return

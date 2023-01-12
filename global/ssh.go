@@ -9,14 +9,16 @@ import (
 	"strings"
 	"time"
 
+	"log"
+
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/ssh"
 )
 
 var (
-	ErrConnectFail    = errors.New("SSH连接失败")
-	ErrNewSessionFail = errors.New("SSH新建会话失败")
-	ErrRunCommandFail = errors.New("SSH执行命令失败")
+	ErrConnectFail    = errors.New("SSH 连接失败")
+	ErrNewSessionFail = errors.New("SSH 新建会话失败")
+	ErrRunCommandFail = errors.New("SSH 执行命令失败")
 )
 
 type Cli struct {
@@ -26,18 +28,21 @@ type Cli struct {
 	Port       int         //端口号
 	client     *ssh.Client //ssh客户端
 	LastResult string      //最近一次Run的结果
+	Debug      bool
 }
 
-//创建命令行对象
-//@param ip IP地址
-//@param username 用户名
-//@param password 密码
-//@param port 端口号,默认22
-func NewSSH(ip string, username string, password string, port ...int) *Cli {
+// 创建命令行对象
+// @param ip IP地址
+// @param username 用户名
+// @param password 密码
+// @param debug 是否调试
+// @param port 端口号,默认22
+func NewSSH(ip string, username string, password string, debug bool, port ...int) *Cli {
 	cli := new(Cli)
 	cli.IP = ip
 	cli.Username = username
 	cli.Password = password
+	cli.Debug = debug
 	if len(port) <= 0 {
 		cli.Port = 22
 	} else {
@@ -46,22 +51,31 @@ func NewSSH(ip string, username string, password string, port ...int) *Cli {
 	return cli
 }
 
-//执行shell
-//@param shell shell脚本命令
+// 执行shell
+// @param shell shell脚本命令
 func (c Cli) Run(shell string) (string, error) {
 	if c.client == nil {
 		if err := c.connect(); err != nil {
+			if c.Debug {
+				log.Println(err.Error())
+			}
 			return "", ErrConnectFail
 		}
 	}
 	defer c.client.Close()
 	session, err := c.client.NewSession()
 	if err != nil {
+		if c.Debug {
+			log.Println(err.Error())
+		}
 		return "", ErrNewSessionFail
 	}
 	defer session.Close()
 	buf, err := session.CombinedOutput(shell)
 	if err != nil {
+		if c.Debug {
+			log.Println(err.Error())
+		}
 		return "", ErrRunCommandFail
 	}
 
@@ -69,7 +83,7 @@ func (c Cli) Run(shell string) (string, error) {
 	return c.LastResult, nil
 }
 
-//连接
+// 连接
 func (c *Cli) connect() error {
 	config := ssh.ClientConfig{
 		User: c.Username,
@@ -82,6 +96,9 @@ func (c *Cli) connect() error {
 	addr := fmt.Sprintf("%s:%d", c.IP, c.Port)
 	sshClient, err := ssh.Dial("tcp", addr, &config)
 	if err != nil {
+		if c.Debug {
+			log.Println(err.Error())
+		}
 		return err
 	}
 	c.client = sshClient
