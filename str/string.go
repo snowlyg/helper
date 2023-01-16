@@ -37,21 +37,6 @@ func HasChinese(str string) bool {
 	return false
 }
 
-func InStrArray(s string, ss []string) bool {
-	if ss == nil {
-		return false
-	}
-	if len(ss) == 0 {
-		return false
-	}
-	for _, item := range ss {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
 func IsGBK(data []byte) bool {
 	length := len(data)
 	var i int = 0
