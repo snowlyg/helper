@@ -3,8 +3,39 @@ package global
 import (
 	"fmt"
 	"net"
+	"strings"
 	"time"
+
+	"github.com/snowlyg/helper/arr"
 )
+
+func GetMacAddr() string {
+	macAddr := ""
+	netInterfaces, err := net.Interfaces()
+	if err != nil {
+		return macAddr
+	}
+
+	for _, netInterface := range netInterfaces {
+		flags := strings.Split(netInterface.Flags.String(), "|")
+		flagsCheck := arr.NewCheckArrayType(len(flags))
+		for _, flag := range flags {
+			flagsCheck.Add(flag)
+		}
+		if !flagsCheck.Check(net.FlagUp.String()) {
+			continue
+		}
+		addr := netInterface.HardwareAddr.String()
+		if len(addr) == 0 {
+			continue
+		}
+		addr = strings.ReplaceAll(addr, ":", "")
+		addr = strings.ToUpper(addr)
+
+		macAddr = addr
+	}
+	return macAddr
+}
 
 func LocalIP() string {
 	ip := ""
