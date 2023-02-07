@@ -2,7 +2,6 @@ package global
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -21,7 +20,6 @@ func GetMacAddr() string {
 		flags := strings.Split(netInterface.Flags.String(), "|")
 		flagsCheck := arr.NewCheckArrayType(len(flags))
 		for _, flag := range flags {
-			log.Println(flag)
 			flagsCheck.Add(flag)
 		}
 		if !flagsCheck.Check(net.FlagUp.String()) {
@@ -29,12 +27,11 @@ func GetMacAddr() string {
 		}
 		addr := netInterface.HardwareAddr.String()
 		if len(addr) > 0 {
-			continue
+			addr = strings.ReplaceAll(addr, ":", "")
+			addr = strings.ToUpper(addr)
+			return addr
 		}
-		addr = strings.ReplaceAll(addr, ":", "")
-		addr = strings.ToUpper(addr)
 
-		return addr
 	}
 	return macAddr
 }
