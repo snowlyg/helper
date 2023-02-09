@@ -3,6 +3,7 @@ package global
 import (
 	"fmt"
 	"net"
+	"regexp"
 	"strings"
 	"time"
 
@@ -10,40 +11,48 @@ import (
 )
 
 func GetMacAddr() string {
-	macAddr := ""
+	addr := getMacAddrInterface().HardwareAddr.String()
+	if len(addr) > 0 {
+		addr = strings.ReplaceAll(addr, ":", "")
+		addr = strings.ToUpper(addr)
+		return addr
+	}
+	return ""
+}
+
+func getMacAddrInterface() *net.Interface {
 	netInterfaces, err := net.Interfaces()
 	if err != nil {
-		return macAddr
+		return nil
 	}
-
+	re, err := regexp.Compile(`^(ens|eth|waln)[0-9]*`)
+	if err != nil {
+		return nil
+	}
+	nameCheck := arr.NewCheckArrayType(0)
+	nameCheck.AddMutil("eth0", "waln0")
 	for _, netInterface := range netInterfaces {
-		flags := strings.Split(netInterface.Flags.String(), "|")
-		flagsCheck := arr.NewCheckArrayType(len(flags))
-		for _, flag := range flags {
-			flagsCheck.Add(flag)
+		if nameCheck.Check(netInterface.Name) {
+			return &netInterface
 		}
-		if !flagsCheck.Check(net.FlagUp.String()) {
-			continue
+		if re.MatchString(netInterface.Name) {
+			return &netInterface
 		}
-		addr := netInterface.HardwareAddr.String()
-		if len(addr) > 0 {
-			addr = strings.ReplaceAll(addr, ":", "")
-			addr = strings.ToUpper(addr)
-			return addr
-		}
-
 	}
-	return macAddr
+	return nil
 }
 
 func LocalIP() string {
 	ip := ""
 	if addrs, err := net.InterfaceAddrs(); err == nil {
-		for _, addr := range addrs {
-			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && !ipnet.IP.IsMulticast() && !ipnet.IP.IsLinkLocalUnicast() && !ipnet.IP.IsLinkLocalMulticast() && ipnet.IP.To4() != nil {
-				ip = ipnet.IP.String()
-				if len(ip) > 0 {
-					return ip
+		for i, addr := range addrs {
+			i += 1
+			if getMacAddrInterface().Index == i {
+				if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && !ipnet.IP.IsMulticast() && !ipnet.IP.IsLinkLocalUnicast() && !ipnet.IP.IsLinkLocalMulticast() && ipnet.IP.To4() != nil {
+					ip = ipnet.IP.String()
+					if len(ip) > 0 {
+						return ip
+					}
 				}
 			}
 		}
