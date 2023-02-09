@@ -12,6 +12,9 @@ import (
 )
 
 func GetMacAddr() string {
+	if getMacAddrInterface() == nil {
+		return ""
+	}
 	addr := getMacAddrInterface().HardwareAddr.String()
 	if len(addr) > 0 {
 		addr = strings.ReplaceAll(addr, ":", "")
@@ -26,7 +29,7 @@ func getMacAddrInterface() *net.Interface {
 	if err != nil {
 		return nil
 	}
-	re, err := regexp.Compile(`^(ens|eth|waln|以太网)[0-9]*`)
+	re, err := regexp.Compile(`^(ens|eth|waln|以太网|Ethernet)[0-9]*`)
 	if err != nil {
 		return nil
 	}
@@ -49,8 +52,8 @@ func LocalIP() string {
 	if addrs, err := net.InterfaceAddrs(); err == nil {
 		for i, addr := range addrs {
 			i += 1
-			if getMacAddrInterface().Index == i {
-				if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && !ipnet.IP.IsMulticast() && !ipnet.IP.IsLinkLocalUnicast() && !ipnet.IP.IsLinkLocalMulticast() && ipnet.IP.To4() != nil {
+			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && !ipnet.IP.IsMulticast() && !ipnet.IP.IsLinkLocalUnicast() && !ipnet.IP.IsLinkLocalMulticast() && ipnet.IP.To4() != nil {
+				if getMacAddrInterface() != nil && getMacAddrInterface().Index == i {
 					ip = ipnet.IP.String()
 					if len(ip) > 0 {
 						return ip
