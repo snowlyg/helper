@@ -2,7 +2,6 @@ package global
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"regexp"
 	"strings"
@@ -36,7 +35,6 @@ func getMacAddrInterface() *net.Interface {
 	nameCheck := arr.NewCheckArrayType(0)
 	nameCheck.AddMutil("eth0", "waln0")
 	for _, netInterface := range netInterfaces {
-		log.Println(netInterface.Name)
 		if nameCheck.Check(netInterface.Name) {
 			return &netInterface
 		}
