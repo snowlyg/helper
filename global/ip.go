@@ -59,6 +59,10 @@ func LocalIP() string {
 						return ip
 					}
 				}
+				ip = ipnet.IP.String()
+				if len(ip) > 0 {
+					return ip
+				}
 			}
 		}
 	}
