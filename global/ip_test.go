@@ -25,10 +25,14 @@ func TestGetMacAddrs(t *testing.T) {
 	})
 }
 
-func TestgetMacAddrInterface(t *testing.T) {
+func TestGetMacAddrInterface(t *testing.T) {
 	want := "ens192"
 	t.Run("test get mac addr interface", func(t *testing.T) {
 		mai := getMacAddrInterface()
+		if mai == nil {
+			t.Error("mac addr interface is nil")
+			return
+		}
 		if mai.Name != want {
 			t.Errorf("getMacAddrInterface() want get %s but get %s", want, mai.Name)
 		}
