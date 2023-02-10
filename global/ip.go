@@ -45,20 +45,25 @@ func getMacAddrInterface() *net.Interface {
 	return nil
 }
 
-func LocalIP() string {
+func check(ip, network string) bool {
+	parseIp, subnet, err := net.ParseCIDR(network)
+	if err != nil {
+		return false
+	}
+	if ip == parseIp.String() {
+		return false
+	}
+	return subnet.Contains(net.ParseIP(ip))
+}
+
+func LocalIP(network string) string {
 	ip := ""
 	if addrs, err := net.InterfaceAddrs(); err == nil {
 		for i, addr := range addrs {
 			i += 1
 			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && !ipnet.IP.IsMulticast() && !ipnet.IP.IsLinkLocalUnicast() && !ipnet.IP.IsLinkLocalMulticast() && ipnet.IP.To4() != nil {
-				if getMacAddrInterface() != nil && getMacAddrInterface().Index == i {
-					ip = ipnet.IP.String()
-					if len(ip) > 0 {
-						return ip
-					}
-				}
 				ip = ipnet.IP.String()
-				if len(ip) > 0 {
+				if len(ip) > 0 && check(ip, network) {
 					return ip
 				}
 			}

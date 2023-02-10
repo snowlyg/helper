@@ -5,10 +5,12 @@ import (
 	"testing"
 )
 
+var network = "10.0.0.1/22"
+
 func TestLocalIP(t *testing.T) {
 	want := "10.0.0.26"
 	t.Run("test get local ip", func(t *testing.T) {
-		ip := LocalIP()
+		ip := LocalIP(network)
 		if ip != want {
 			t.Errorf("LocalIP() want get %s but get %s", want, ip)
 		}
@@ -35,6 +37,18 @@ func TestGetMacAddrInterface(t *testing.T) {
 		}
 		if mai.Name != want {
 			t.Errorf("getMacAddrInterface() want get %s but get %s", want, mai.Name)
+		}
+	})
+}
+func TestCheck(t *testing.T) {
+	t.Run("test ip check", func(t *testing.T) {
+		if !check("10.0.1.1", network) {
+			t.Error("ip check is fail")
+			return
+		}
+		if check("192.168.0.1", network) {
+			t.Error("ip check is fail")
+			return
 		}
 	})
 }
