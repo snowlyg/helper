@@ -33,11 +33,13 @@ func getMacAddrInterface() *net.Interface {
 		return nil
 	}
 	nameCheck := arr.NewCheckArrayType(0)
-	nameCheck.AddMutil("eth0", "waln0")
+	nameCheck.AddMutil("eth0", "waln0", "以太网", "Ethernet", "ens0")
 	for _, netInterface := range netInterfaces {
 		if nameCheck.Check(netInterface.Name) {
 			return &netInterface
 		}
+	}
+	for _, netInterface := range netInterfaces {
 		if re.MatchString(netInterface.Name) {
 			return &netInterface
 		}
