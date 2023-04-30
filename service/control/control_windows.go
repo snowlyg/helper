@@ -1,9 +1,12 @@
+//go:build windows
 // +build windows
+
 package control
 
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -60,17 +63,17 @@ func Stop(srvName string) error {
 		go func() {
 			err := service.ServiceStop(srvName)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			}
 		}()
-		fmt.Println(restop)
+		log.Println(restop)
 		time.Sleep(1 * time.Second)
 		restop--
 	}
 
 	status, err = service.ServiceStatus(srvName)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
@@ -78,12 +81,21 @@ func Stop(srvName string) error {
 		return errors.New("服务未停止")
 	}
 
-	pid, err := dir.ReadString("./.pid")
-	if err != nil {
-		return err
-	}
+	pid, _ := dir.ReadString("./.pid")
 
 	ppid, _ := strconv.Atoi(pid)
+	if ppid == 0 {
+		processId, err := service.ServiceProcessId(srvName)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		if err == nil {
+			dir.WriteString("./.pid", strconv.FormatUint(uint64(processId), 10))
+		}
+		ppid = int(processId)
+	}
+
 	if b, _ := process.PidExists(int32(ppid)); b {
 		ps, _ := process.Processes()
 		if len(ps) > 0 {
@@ -93,11 +105,12 @@ func Stop(srvName string) error {
 				}
 				err = p.Kill()
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 				}
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -119,7 +132,7 @@ func Start(srvName string) error {
 	for restart > 0 {
 		err := service.ServiceStart(srvName)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		status, _ = service.ServiceStatus(srvName)
 		if status == service.StatusRunning {
@@ -130,7 +143,7 @@ func Start(srvName string) error {
 			return nil
 		}
 		restart--
-		fmt.Println("启动失败1次")
+		log.Println("启动失败1次")
 		continue
 	}
 
