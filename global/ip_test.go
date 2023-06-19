@@ -8,7 +8,7 @@ import (
 var network = "10.0.0.1/22"
 
 func TestLocalIP(t *testing.T) {
-	want := "10.0.0.26"
+	want := "172.18.236.240"
 	t.Run("test get local ip", func(t *testing.T) {
 		ip := LocalIP(network)
 		if ip != want {
@@ -18,7 +18,7 @@ func TestLocalIP(t *testing.T) {
 }
 
 func TestGetMacAddrs(t *testing.T) {
-	want := "000c2978391b"
+	want := "00155DDB2E65"
 	t.Run("test get mac addr", func(t *testing.T) {
 		mac := GetMacAddr()
 		if mac != strings.ToUpper(want) {
@@ -28,7 +28,7 @@ func TestGetMacAddrs(t *testing.T) {
 }
 
 func TestGetMacAddrInterface(t *testing.T) {
-	want := "ens192"
+	want := "eth0"
 	t.Run("test get mac addr interface", func(t *testing.T) {
 		mai := getMacAddrInterface()
 		if mai == nil {
@@ -55,7 +55,7 @@ func TestCheck(t *testing.T) {
 
 func TestIsPortInUse(t *testing.T) {
 	t.Run("test is port in use", func(t *testing.T) {
-		if !IsPortInUse("127.0.0.1", 9092) {
+		if !IsPortInUse("10.0.0.26", 9092) {
 			t.Errorf("IsPortInUse(9092) must be return ture but return false")
 		}
 	})
