@@ -8,7 +8,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.21.11
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc
 	golang.org/x/crypto v0.9.0
-	golang.org/x/sys v0.8.0
+	golang.org/x/sys v0.11.1-0.20230817163440-e8190d9965d9
 	gopkg.in/yaml.v2 v2.4.0
 )
 
