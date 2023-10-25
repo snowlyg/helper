@@ -113,6 +113,10 @@ func (sr *ServerResponse) Close() {
 	}
 }
 
+func (n *client) GetCookie() *http.Cookie {
+	return n.cookie
+}
+
 // Check
 func (n *client) Check(sr *ServerResponse) error {
 	ba := sr.BaseAuth()
