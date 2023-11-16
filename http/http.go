@@ -205,7 +205,7 @@ func (n *client) Upload(sr *ServerResponse) ([]byte, error) {
 
 	result := n.request("POST", n.getFullPath(sr.path), sr.BaseAuth(), body)
 	if len(result) == 0 {
-		return result, fmt.Errorf("Get %s 没有返回数据", n.getFullPath(sr.path))
+		return result, fmt.Errorf("Upload %s 没有返回数据", n.getFullPath(sr.path))
 	}
 
 	if !json.Valid(result) || sr.Data == nil {
