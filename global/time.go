@@ -12,7 +12,7 @@ import (
 // DateTime 自定义事件类型
 type DateTime time.Time
 
-//  日期格式
+// 日期格式
 const (
 	DateLayout      = "2006-01-02"
 	DateTimeLayout  = "2006-01-02 15:04:05"
@@ -75,13 +75,12 @@ func UpTimeString() string {
 	return fmt.Sprintf("%d Days %d Hours %d Mins %d Secs", days, hours, minutes, seconds)
 }
 
-// 获取时区
+func ShanghaiLocation() (*time.Location, error) {
+	return time.LoadLocation("Asia/Shanghai")
+}
+
 func GetLocation() (*time.Location, error) {
-	location, err := time.LoadLocation("Local")
-	if err != nil {
-		return location, nil
-	}
-	return location, nil
+	return time.LoadLocation("Local")
 }
 
 func GetDuration(t int64, v string) time.Duration {
