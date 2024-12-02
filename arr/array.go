@@ -5,6 +5,7 @@ import "sync"
 type ArrayType interface {
 	Add(value interface{})
 	Check(value interface{}) bool
+	Del(value interface{})
 	Len() int
 	Values() map[interface{}]bool
 }
@@ -52,6 +53,13 @@ func (ct *CheckArrayType) Len() int {
 	defer ct.sm.Unlock()
 	ct.sm.Lock()
 	return ct.len
+}
+
+// Del
+func (ct *CheckArrayType) Del(value interface{}) {
+	defer ct.sm.Unlock()
+	ct.sm.Lock()
+	delete(ct.values, value)
 }
 
 // Values
