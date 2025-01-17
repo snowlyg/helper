@@ -31,6 +31,13 @@ func TestCheckArrayType(t *testing.T) {
 				t.Errorf("%v should be in array type,but it is not in", i)
 			}
 		}
+		arrayType.Del("1")
+		if arrayType.Check("1") {
+			t.Errorf("1 should be in array type,but it is not in.")
+		}
+		if arrayType.Len() != 3 {
+			t.Errorf("array type len should be 4 ,but get array type len is %d.", arrayType.Len())
+		}
 	})
 
 	t.Run("check array type test with uint", func(t *testing.T) {

@@ -60,6 +60,7 @@ func (ct *CheckArrayType) Del(value interface{}) {
 	defer ct.sm.Unlock()
 	ct.sm.Lock()
 	delete(ct.values, value)
+	ct.len--
 }
 
 // Values
