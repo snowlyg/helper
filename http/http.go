@@ -31,6 +31,7 @@ type Config struct {
 	Headers    map[string]string // request headers
 	CookieName string
 	Host       string
+	Debug      bool
 }
 
 // BaseAuth
@@ -131,7 +132,9 @@ func (n *client) Check(sr *ServerResponse) error {
 
 // getFullPath
 func (n *client) getFullPath(path string) string {
-	log.Println("fullpath:", path)
+	if n.config != nil && n.config.Debug {
+		log.Println("fullpath:", path)
+	}
 	return str.Join(n.config.Host, path)
 }
 
