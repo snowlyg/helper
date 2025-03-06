@@ -3,35 +3,35 @@ package arr
 import "sync"
 
 type ArrayType interface {
-	Add(value interface{})
-	Check(value interface{}) bool
-	Del(value interface{})
+	Add(value any)
+	Check(value any) bool
+	Del(value any)
 	Len() int
-	Values() map[interface{}]bool
+	Values() []any
 }
 
 // CheckType type for check array data
 type CheckArrayType struct {
-	values map[interface{}]bool
-	sm     sync.Mutex
+	sync.Mutex
+	values map[any]bool
 	len    int
 }
 
 // NewCheckArrayType
 func NewCheckArrayType(len int) *CheckArrayType {
-	return &CheckArrayType{values: make(map[interface{}]bool, len)}
+	return &CheckArrayType{values: make(map[any]bool, len)}
 }
 
 // Add
-func (ct *CheckArrayType) Add(value interface{}) {
-	defer ct.sm.Unlock()
-	ct.sm.Lock()
+func (ct *CheckArrayType) Add(value any) {
+	defer ct.Unlock()
+	ct.Lock()
 	ct.values[value] = true
 	ct.len++
 }
 
 // AddMutil
-func (ct *CheckArrayType) AddMutil(values ...interface{}) {
+func (ct *CheckArrayType) AddMutil(values ...any) {
 	for _, v := range values {
 		v := v
 		ct.Add(v)
@@ -39,9 +39,9 @@ func (ct *CheckArrayType) AddMutil(values ...interface{}) {
 }
 
 // Check
-func (ct *CheckArrayType) Check(value interface{}) bool {
-	defer ct.sm.Unlock()
-	ct.sm.Lock()
+func (ct *CheckArrayType) Check(value any) bool {
+	defer ct.Unlock()
+	ct.Lock()
 	if b, ok := ct.values[value]; ok && b {
 		return true
 	}
@@ -50,22 +50,26 @@ func (ct *CheckArrayType) Check(value interface{}) bool {
 
 // Len
 func (ct *CheckArrayType) Len() int {
-	defer ct.sm.Unlock()
-	ct.sm.Lock()
+	defer ct.Unlock()
+	ct.Lock()
 	return ct.len
 }
 
 // Del
-func (ct *CheckArrayType) Del(value interface{}) {
-	defer ct.sm.Unlock()
-	ct.sm.Lock()
+func (ct *CheckArrayType) Del(value any) {
+	defer ct.Unlock()
+	ct.Lock()
 	delete(ct.values, value)
 	ct.len--
 }
 
 // Values
-func (ct *CheckArrayType) Values() map[interface{}]bool {
-	defer ct.sm.Unlock()
-	ct.sm.Lock()
-	return ct.values
+func (ct *CheckArrayType) Values() []any {
+	defer ct.Unlock()
+	ct.Lock()
+	values := make([]any, 0, len(ct.values))
+	for k := range ct.values {
+		values = append(values, k)
+	}
+	return values
 }
