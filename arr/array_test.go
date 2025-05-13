@@ -1,7 +1,6 @@
 package arr
 
 import (
-	"log"
 	"testing"
 )
 
@@ -25,10 +24,9 @@ func TestCheckArrayType(t *testing.T) {
 		if arrayType.Len() != 4 {
 			t.Errorf("array type len should be 4 ,but get array type len is %d.", arrayType.Len())
 		}
-		for i, v := range arrayType.Values() {
-			log.Println(v)
-			if !arrayType.Check(i) {
-				t.Errorf("%v should be in array type,but it is not in", i)
+		for _, v := range arrayType.Values() {
+			if !arrayType.Check(v) {
+				t.Errorf("%v should be in array type,but it is not in", v)
 			}
 		}
 		arrayType.Del("1")
@@ -60,10 +58,9 @@ func TestCheckArrayType(t *testing.T) {
 		if arrayType.Len() != 4 {
 			t.Errorf("array type len should be 4 ,but get array type len is %d.", arrayType.Len())
 		}
-		for i, v := range arrayType.Values() {
-			log.Println(v)
-			if !arrayType.Check(i) {
-				t.Errorf("%v should be in array type,but it is not in", i)
+		for _, v := range arrayType.Values() {
+			if !arrayType.Check(v) {
+				t.Errorf("%v should be in array type,but it is not in", v)
 			}
 		}
 	})
@@ -87,10 +84,9 @@ func TestCheckArrayType(t *testing.T) {
 		if arrayType.Len() != 4 {
 			t.Errorf("array type len should be 4 ,but get array type len is %d.", arrayType.Len())
 		}
-		for i, v := range arrayType.Values() {
-			log.Println(v)
-			if !arrayType.Check(i) {
-				t.Errorf("%v should be in array type,but it is not in", i)
+		for _, v := range arrayType.Values() {
+			if !arrayType.Check(v) {
+				t.Errorf("%v should be in array type,but it is not in", v)
 			}
 		}
 	})

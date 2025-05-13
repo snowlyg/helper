@@ -9,11 +9,10 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/snowlyg/helper/str"
 )
 
 var ErrInvalidDataStruct = errors.New("invalid response data struct")
@@ -135,7 +134,8 @@ func (n *client) getFullPath(path string) string {
 	if n.config != nil && n.config.Debug {
 		log.Println("fullpath:", path)
 	}
-	return str.Join(n.config.Host, path)
+	u, _ := url.JoinPath(n.config.Host, path)
+	return u
 }
 
 // Post

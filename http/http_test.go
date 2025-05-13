@@ -50,7 +50,6 @@ func startGin() {
 }
 
 func TestNewClient(t *testing.T) {
-
 	client := NewClient()
 	t.Run("test new client", func(t *testing.T) {
 		if client == nil {
@@ -73,7 +72,17 @@ func TestNewClient(t *testing.T) {
 
 	response := NewResponse("/foo")
 	fullpath := client.getFullPath("/fullpath")
-	if client.getFullPath("/fullpath") != "http://127.0.0.1:7777/fullpath" {
+	if fullpath != "http://127.0.0.1:7777/fullpath" {
+		t.Errorf("client default timeover want %s but get %s", "http://127.0.0.1:7777", fullpath)
+		return
+	}
+	fullpath = client.getFullPath("//fullpath")
+	if fullpath != "http://127.0.0.1:7777/fullpath" {
+		t.Errorf("client default timeover want %s but get %s", "http://127.0.0.1:7777", fullpath)
+		return
+	}
+	fullpath = client.getFullPath("fullpath")
+	if fullpath != "http://127.0.0.1:7777/fullpath" {
 		t.Errorf("client default timeover want %s but get %s", "http://127.0.0.1:7777", fullpath)
 		return
 	}
