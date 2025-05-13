@@ -134,7 +134,9 @@ func (n *client) getFullPath(path string) string {
 	if n.config != nil && n.config.Debug {
 		log.Println("fullpath:", path)
 	}
+	// url.ParseQuery(path)
 	u, _ := url.JoinPath(n.config.Host, path)
+	u, _ = url.PathUnescape(u)
 	return u
 }
 
@@ -144,9 +146,10 @@ func (n *client) Post(sr *ServerResponse, data string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := n.request("POST", n.getFullPath(sr.path), sr.BaseAuth(), strings.NewReader(data))
+	f := n.getFullPath(sr.path)
+	result := n.request("POST", f, sr.BaseAuth(), strings.NewReader(data))
 	if len(result) == 0 {
-		return result, fmt.Errorf("Post %s 没有返回数据", n.getFullPath(sr.path))
+		return result, fmt.Errorf("Post %s 没有返回数据", f)
 	}
 	if !json.Valid(result) || sr.Data == nil {
 		sr.Data = string(result)
@@ -154,7 +157,7 @@ func (n *client) Post(sr *ServerResponse, data string) ([]byte, error) {
 	}
 	err = json.Unmarshal(result, sr.Data)
 	if err != nil {
-		return result, fmt.Errorf("执行解码失败: %s 错误：%w ,结果: %v", n.getFullPath(sr.path), err, string(result))
+		return result, fmt.Errorf("执行解码失败: %s 错误：%w ,结果: %v", f, err, string(result))
 	}
 	return result, nil
 }
@@ -165,7 +168,8 @@ func (n *client) GetFile(sr *ServerResponse) error {
 	if err != nil {
 		return err
 	}
-	_ = n.request("GET", n.getFullPath(sr.path), sr.BaseAuth(), nil)
+	f := n.getFullPath(sr.path)
+	_ = n.request("GET", f, sr.BaseAuth(), nil)
 	return nil
 }
 
@@ -205,10 +209,10 @@ func (n *client) Upload(sr *ServerResponse) ([]byte, error) {
 	}
 
 	n.config.Headers["Content-Type"] = writer.FormDataContentType()
-
-	result := n.request("POST", n.getFullPath(sr.path), sr.BaseAuth(), body)
+	f := n.getFullPath(sr.path)
+	result := n.request("POST", f, sr.BaseAuth(), body)
 	if len(result) == 0 {
-		return result, fmt.Errorf("Upload %s 没有返回数据", n.getFullPath(sr.path))
+		return result, fmt.Errorf("Upload %s 没有返回数据", f)
 	}
 
 	if !json.Valid(result) || sr.Data == nil {
@@ -218,7 +222,7 @@ func (n *client) Upload(sr *ServerResponse) ([]byte, error) {
 
 	err = json.Unmarshal(result, sr.Data)
 	if err != nil {
-		return result, fmt.Errorf("执行解码失败: %s 错误：%w ,结果: %v", n.getFullPath(sr.path), err, string(result))
+		return result, fmt.Errorf("执行解码失败: %s 错误：%w ,结果: %v", f, err, string(result))
 	}
 
 	return result, nil
@@ -230,9 +234,10 @@ func (n *client) Get(sr *ServerResponse) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := n.request("GET", n.getFullPath(sr.path), sr.BaseAuth(), nil)
+	f := n.getFullPath(sr.path)
+	result := n.request("GET", f, sr.BaseAuth(), nil)
 	if len(result) == 0 {
-		return result, fmt.Errorf("Get %s 没有返回数据", n.getFullPath(sr.path))
+		return result, fmt.Errorf("Get %s 没有返回数据", f)
 	}
 	if !json.Valid(result) || sr.Data == nil {
 		sr.Data = string(result)
@@ -240,7 +245,7 @@ func (n *client) Get(sr *ServerResponse) ([]byte, error) {
 	}
 	err = json.Unmarshal(result, sr.Data)
 	if err != nil {
-		return result, fmt.Errorf("执行解码失败: %s 获取服务解析返回内容报错 %w : ,结果:[%s]", n.getFullPath(sr.path), err, string(result))
+		return result, fmt.Errorf("执行解码失败: %s 获取服务解析返回内容报错 %w : ,结果:[%s]", f, err, string(result))
 	}
 	return result, nil
 }

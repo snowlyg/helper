@@ -71,19 +71,27 @@ func TestNewClient(t *testing.T) {
 	})
 
 	response := NewResponse("/foo")
+
+	want := "http://127.0.0.1:7777/fullpath"
 	fullpath := client.getFullPath("/fullpath")
-	if fullpath != "http://127.0.0.1:7777/fullpath" {
-		t.Errorf("client default timeover want %s but get %s", "http://127.0.0.1:7777", fullpath)
+	if fullpath != want {
+		t.Errorf("client default timeover want %s but get %s", want, fullpath)
 		return
 	}
 	fullpath = client.getFullPath("//fullpath")
-	if fullpath != "http://127.0.0.1:7777/fullpath" {
-		t.Errorf("client default timeover want %s but get %s", "http://127.0.0.1:7777", fullpath)
+	if fullpath != want {
+		t.Errorf("client default timeover want %s but get %s", want, fullpath)
 		return
 	}
 	fullpath = client.getFullPath("fullpath")
-	if fullpath != "http://127.0.0.1:7777/fullpath" {
-		t.Errorf("client default timeover want %s but get %s", "http://127.0.0.1:7777", fullpath)
+	if fullpath != want {
+		t.Errorf("client default timeover want %s but get %s", want, fullpath)
+		return
+	}
+	fullpath = client.getFullPath("/service/sysConfig/list?deviceClass=avs&locCode=111")
+	want = "http://127.0.0.1:7777/service/sysConfig/list?deviceClass=avs&locCode=111"
+	if fullpath != want {
+		t.Errorf("client default timeover want %s but get %s", want, fullpath)
 		return
 	}
 	t.Run("test new response", func(t *testing.T) {
